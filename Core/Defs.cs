@@ -6,8 +6,10 @@ namespace Casino.Core {
     public static class Defs {
 
         /* MODIFIABLE VALUES */
-        public static readonly short DECK_SIZE = 52; /* (short)(52 * NUMBER_OF_DECKS); */
         public static readonly byte NUMBER_OF_DECKS = 1;
+        public static readonly short DECK_SIZE = (short)(52 * NUMBER_OF_DECKS);
+        public static readonly byte CARDS_PER_PLAYER = 4;
+        public static readonly byte NEW_CARDS_ON_TABLE_PER_ROUND = 4;
 
         ///* PLEASE DO NOT MODIFY VALUES BELOW *///
         /// ***********************************************************

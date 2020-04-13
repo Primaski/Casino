@@ -7,8 +7,8 @@ using static Casino.Core.Defs;
 namespace Casino.Core {
     public class Deck {
         
-        private byte[] cardDeck = null;
-        public byte[] CardDeck { get { return cardDeck; } private set { cardDeck = value; } }
+        private List<byte> cardDeck = null;
+        public List<byte> CardDeck { get { return cardDeck; } private set { cardDeck = value; } }
         short noOfCards = 0;
         public Deck(bool shuffle = true, byte noOfDecks = 1) {
             if (noOfDecks != 1) throw new NotImplementedException("Please limit decks to 1 for now.");
@@ -25,13 +25,13 @@ namespace Casino.Core {
                     }
                 }
             }
-            cardDeck = cardList.ToArray();
+            cardDeck = cardList;
         }
 
 
         private Deck ShuffleDeck() {
             /* Variation on Fisher-Yates algorithm */
-            byte[] deck = CardDeck;
+            List<byte> deck = CardDeck;
             int highestIndex = noOfCards - 1;
             for(int i = highestIndex; i >= 0; i--) {
                 int rand = Util.randomNumber.Next(0,i);
@@ -45,7 +45,7 @@ namespace Casino.Core {
 
         public string PrintDeck(bool newLine = false, bool shorthand = false, bool ascii = false) {
             StringBuilder result = new StringBuilder();
-            byte[] localDeck = CardDeck;
+            List<byte> localDeck = CardDeck;
             string sep = newLine ? "\n" : ", ";
             for(int i = 0; i < noOfCards; i++) {
                 string statement = (!shorthand) ? Defs.PrintCard(localDeck[i]) + sep
@@ -57,7 +57,7 @@ namespace Casino.Core {
         }
 
         public Deck OrderDeck() {
-            CardDeck = CardDeck.OrderBy(x => x).ToArray();
+            CardDeck = CardDeck.OrderBy(x => x).ToList();
             return this;
         }
 

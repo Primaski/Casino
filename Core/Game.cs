@@ -4,19 +4,46 @@ using System.Text;
 using static Casino.Core.Defs;
 
 namespace Casino.Core {
-    public class Game {
-        public Game(Player[] players, Deck deck) {
+    public static class Game {
+
+        private static Player p1 = null;
+        private static Player p2 = null;
+        private static Table table = null;
+
+
+        public static void NewGame(Player[] players) {
+            Deck deck = new Deck();
+            table = new Table(deck);
+
             try {
-                if (players?[0].name != "" && players?[1].name != "" &&
-                    players.Length == 2 && deck.CardDeck?.Length == DECK_SIZE) {
-                    Console.WriteLine("Good to go! Welcome, " + players[0].name + " and " + players[1].name + "!");
-                } else {
-                    throw new Exception("Invalid params.");
+                if (!IsValidGame(players)) {
+                    throw new Exception(ErrorMessage.InvalidGameSetup());
                 }
-            } catch(Exception e) {
+            }catch(Exception e) {
                 Console.WriteLine(e.ToString());
+                return;
             }
+
+            p1 = players[0];
+            p2 = players[1];
+
+            PlayGame();
+
             return;
         }
+
+        private static bool IsValidGame(Player[] players) {
+            try {
+                //add more in the future
+                return (players.Length == 2);
+            } catch { 
+                throw; 
+            }
+        }
+        private static void PlayGame() {
+            throw new NotImplementedException();
+        }
+
+
     }
 }
