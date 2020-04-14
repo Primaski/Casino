@@ -41,6 +41,7 @@ namespace Casino.Core {
             }
         }
         private static void PlayGame() {
+            Tuple<List<byte>,List<byte>> newPlayerCards = table.DealCards();
             throw new NotImplementedException();
         }
 

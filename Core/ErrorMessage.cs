@@ -19,9 +19,14 @@ namespace Casino.Core {
             return (locationOfError + " expected exactly " + expectedNumber + " cards, but received "
                 + actualNumber + " cards.");
         }
-
         public static string InvalidGameSetup() {
             return "Invalid game setup, ensure there are exactly two named players.";
+        }
+
+        public static string UnevenDeck() {
+            return "The deck size (" + DECK_SIZE + ") minus the cards dealt to the table (" + INITIAL_CARDS_ON_TABLE + ") modulo " +
+                "the number of cards dealt to each player (" + CARDS_PER_PLAYER + ") must be 0, in order for there to be the correct number of " +
+                "cards reamining in the final deal.";
         }
     }
 }
