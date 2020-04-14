@@ -13,7 +13,7 @@ namespace Casino {
             Console.WriteLine("What is Player 2's name?");
             string p2Name = Console.ReadLine();
             p1Name = p1Name == "" ? "Player 1" : p1Name;
-            p1Name = p1Name == "" ? "Player 2" : p2Name;
+            p2Name = p2Name == "" ? "Player 2" : p2Name;
             p1Name = p1Name.Length >= 20 ? p1Name.Substring(0, 20) + "..." : p1Name;
             p2Name = p2Name.Length >= 20 ? p2Name.Substring(0, 20) + "..." : p2Name;
             try {

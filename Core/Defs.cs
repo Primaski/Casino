@@ -7,7 +7,6 @@ namespace Casino.Core {
 
         /* MODIFIABLE VALUES */
         public static readonly byte NUMBER_OF_DECKS = 1;
-        public static readonly short DECK_SIZE = (short)(52 * NUMBER_OF_DECKS);
         public static readonly byte CARDS_PER_PLAYER = 4;
         public static readonly byte INITIAL_CARDS_ON_TABLE = 4;
 
@@ -26,7 +25,8 @@ namespace Casino.Core {
         /// 0001 1111 -> Null
         /// We can use bitwise operations to extract the suit and value of the card (using below methods), and it only takes 1 byte!
         /// ***********************************************************///
-        
+
+        public static readonly short DECK_SIZE = (short)(52 * NUMBER_OF_DECKS);
         public enum CardVals {
             NONE, Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King
         };
@@ -48,8 +48,24 @@ namespace Casino.Core {
         public static string PrintCard(byte card) {
             return GetCardValue(card) + " of " + GetCardSuit(card);
         }
+
+        public static string PrintCards(List<byte> cards) {
+            StringBuilder str = new StringBuilder();
+            foreach(var card in cards) {
+                str.Append(PrintCard(card) + ", ");
+            }
+            return str.ToString();
+        }
         public static string PrintCardShorthand(byte card, bool ascii = false) {
-            return GetCardValAbbr(card) + " of " + GetCardSuitAbbr(card,ascii);
+            return GetCardValAbbr(card) + GetCardSuitAbbr(card,ascii);
+        }
+
+        public static string PrintCardsShorthand(List<byte> cards, bool ascii = false) {
+            StringBuilder str = new StringBuilder();
+            foreach (var card in cards) {
+                str.Append(PrintCardShorthand(card,ascii) + ", ");
+            }
+            return str.ToString();
         }
         public static byte GetCardDigit(CardVals value, CardSuits suit) {
             return (byte)((byte)value + (byte)suit);

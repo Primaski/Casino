@@ -3,55 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using static Casino.Core.Defs;
+using Casino.Core.Util;
 
 namespace Casino.Core {
     public class Deck {
         
-        private List<byte> cardDeck = null;
-        private short _countCards = 0;
-        public short CountCards { get { return _countCards; } private set { _countCards = value;  } }
+        private List<byte> _cardDeck = null;
+        private bool canCreateNewDeck = true; //ensure that once a card has been added to the deck, this is set to false to ensure no new CreateDeck() calls.
+        public short CardCount { get { return (short)_cardDeck.Count; } }
         public Deck(bool empty = false, bool shuffle = true, byte noOfDecks = 1) {
             if (noOfDecks != 1) throw new NotImplementedException("Please limit decks to 1 for now.");
             if (!empty) {
                 CreateDeck(noOfDecks);
                 if (shuffle) ShuffleDeck();
+            } else {
+                _cardDeck = new List<byte>();
             }
         }
 
-        private Deck CreateDeck(byte noOfDecks) {
-            List<byte> cardList = new List<byte>();
-            foreach (CardSuits suit in Enum.GetValues(typeof(CardSuits))) {
-                foreach(CardVals val in Enum.GetValues(typeof(CardVals))) {
-                    if(val != 0) {
-                        cardList.Add(GetCardDigit(val, suit));
-                        _countCards++;
-                    }
-                }
-            }
-            cardDeck = cardList;
-            return this;
-        }
-
-        private Deck ShuffleDeck() {
-            /* Variation on Fisher-Yates algorithm */
-            List<byte> deck = cardDeck;
-            if(deck?.Count == 0) { return this; }
-            int highestIndex = _countCards - 1;
-            for(int i = highestIndex; i >= 0; i--) {
-                int rand = Util.randomNumber.Next(0,i);
-                byte tempCard = deck[i];
-                deck[i] = deck[rand];
-                deck[rand] = tempCard;
-            }
-            cardDeck = deck;
-            return this;
-        }
-
+        /// <summary>
+        /// Writes all remaining cards in Deck to the Command Prompt, and returns what was printed as a string.
+        /// </summary>
         public string PrintDeck(bool newLine = false, bool shorthand = false, bool ascii = false) {
+            //TODO: replace this with Defs.PrintCards
             StringBuilder result = new StringBuilder();
-            List<byte> localDeck = cardDeck;
+            List<byte> localDeck = _cardDeck;
             string sep = newLine ? "\n" : ", ";
-            for(int i = 0; i < _countCards; i++) {
+            for (int i = 0; i < CardCount; i++) {
                 string statement = (!shorthand) ? Defs.PrintCard(localDeck[i]) + sep
                     : Defs.PrintCardShorthand(localDeck[i], ascii) + sep;
                 result.Append(statement);
@@ -60,53 +38,132 @@ namespace Casino.Core {
             return result.ToString();
         }
 
+        /// <summary>
+        /// Orders deck by suit and then by value smallest to largest.
+        /// </summary>
+        /// <remarks>See Defs.cs to see how cards are stored.</remarks>
         public Deck OrderDeck() {
-            cardDeck = cardDeck.OrderBy(x => x).ToList();
+            _cardDeck = _cardDeck.OrderBy(x => x).ToList();
             return this;
         }
 
-        public List<byte> GetDeck() {
-            return cardDeck;
+        /// <summary>
+        /// Returns string of ordered deck by suit and then by value smallest to largest.
+        /// </summary>
+        /// <remarks>See Defs.cs to see how cards are stored.</remarks>
+        public Deck PrintOrderedDeck() {
+            //TODO Just return string
+            Console.WriteLine(PrintCards(_cardDeck.OrderBy(x => x).ToList()));
+            return this;
         }
+
+        /// <summary>
+        /// Returns a copy List of all cards in this deck.
+        /// </summary>
+        public List<byte> GetDeck() {
+            return _cardDeck;
+        }
+
+        /// <summary>
+        /// Remove cards directly from this deck. NOTE: Use DrawCards() instead to have the function return the removed cards.
+        /// </summary>
+        /// <param name="startIndex">For startIndex = 0 being the top card, state index of first removable card.</param>
+        /// <param name="count">From startIndex, how many cards should be removed?</param>
         public Deck RemoveCards(short startIndex, short count) {
             if (count == 0) return this;
-            if (count < cardDeck.Count) {
-                try {
-                    cardDeck.RemoveRange(startIndex, count);
-                    _countCards -= count;
-                } catch { 
-                    throw; 
-                }
+            if (count < _cardDeck.Count) {
+                _cardDeck.RemoveRange(startIndex, count);
             } else {
-                throw new Exception(ErrorMessage.TooManyCards("Removing cards", cardDeck.Count, count));
+                throw new Exception(ErrorMessage.TooManyCards("Removing cards", CardCount, count));
             }
             return this;
         }
+
+        /// <summary>
+        /// Remove cards directly from this deck from the top. NOTE: Use DrawCards() instead to have the function return the removed cards.
+        /// </summary>
+        /// <param name="count">How many cards should be removed from the top?</param>
         public Deck RemoveCards(short count) {
-            return RemoveCards(0,count);
+            return RemoveCards(0, count);
         }
+
+        /// <summary>
+        /// Removes cards directly from the top of the deck, and returns them to you.
+        /// </summary>
+        /// <param name="count">How many cards to remove from the top?</param>
+        public List<byte> DrawCards(short count) {
+            if(count > CardCount) {
+                throw new Exception(ErrorMessage.TooManyCards("Drawing cards",CardCount,count));
+            }
+            List<byte> removedCards = _cardDeck.GetRange(0, count);
+            RemoveCards(count);
+            return removedCards;
+
+        }
+
+        /// <summary>
+        /// Adds cards directly to the deck at a specified index.
+        /// </summary>
+        /// <param name="atIndex">For atIndex = 0 being the top-most position, state the index to insert the first card.</param>
+        /// <param name="cards">How many cards should be inserted?</param>
         public Deck AddCards(short atIndex, List<byte> cards) {
-            short newCardNo = (short)cardDeck.Count;
-            if (cards.Count + _countCards >= DECK_SIZE) {
-                try {
-                    cardDeck.InsertRange(atIndex, cards);
-                    this._countCards += newCardNo;
-                } catch { 
-                    throw; 
-                }
+            short newCardNo = (short)_cardDeck.Count;
+            if (cards.Count + CardCount >= DECK_SIZE) {
+                _cardDeck.InsertRange(atIndex, cards);
             } else {
                 throw new Exception(ErrorMessage.TooManyCards("Adding cards", DECK_SIZE, cards.Count));
             }
+            canCreateNewDeck = false;
             return this;
         }
 
+        /// <summary>
+        /// Adds cards directly to the top of the deck, in the order they were provided.
+        /// </summary>
         public Deck AddCardsToTop(List<byte> cards) {
             return AddCards(0, cards);
         }
 
+        /// <summary>
+        /// Adds cards directly to the bottom of the deck, in the order they were provided.
+        /// </summary>
         public Deck AddCardsToBottom(List<byte> cards) {
-            return AddCards((short)cardDeck.Count, cards);
+            return AddCards((short)_cardDeck.Count, cards);
         }
+
+
+
+        private Deck CreateDeck(byte noOfDecks) {
+            if (!canCreateNewDeck) return this; 
+
+            List<byte> cardList = new List<byte>();
+            foreach (CardSuits suit in Enum.GetValues(typeof(CardSuits))) {
+                foreach(CardVals val in Enum.GetValues(typeof(CardVals))) {
+                    if(val != 0) {
+                        cardList.Add(GetCardDigit(val, suit));
+                    }
+                }
+            }
+            _cardDeck = cardList;
+            canCreateNewDeck = false;
+            return this;
+        }
+
+        private Deck ShuffleDeck() {
+            /* Variation on Fisher-Yates algorithm */
+            List<byte> deck = _cardDeck;
+            if(deck?.Count == 0) { return this; }
+            int highestIndex = CardCount - 1;
+            for(int i = highestIndex; i >= 0; i--) {
+                int rand = Misc.randomNumber.Next(0,i);
+                byte tempCard = deck[i];
+                deck[i] = deck[rand];
+                deck[rand] = tempCard;
+            }
+            _cardDeck = deck;
+            return this;
+        }
+
 
     }
 }

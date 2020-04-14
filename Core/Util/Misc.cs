@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Casino.Core {
-    public static class Util {
+namespace Casino.Core.Util {
+    public static class Misc {
 
         public static Random randomNumber = new Random();
         public static int FindFirstNullIndex<T>(T[] arr) {
