@@ -9,6 +9,7 @@ namespace Casino.Core {
         public static readonly byte NUMBER_OF_DECKS = 1;
         public static readonly byte CARDS_PER_PLAYER = 4;
         public static readonly byte INITIAL_CARDS_ON_TABLE = 4;
+        public static readonly char RULES_SECTION_OF_CMD_FORMATTING = 'F';
 
         ///* PLEASE DO NOT MODIFY VALUES BELOW *///
         /// ***********************************************************

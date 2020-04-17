@@ -1,0 +1,135 @@
+﻿PLEASE DO NOT POPULATE THIS DOCUMENT WITH (A) - (Z), AS THEY ARE USED FOR PARSING PURPOSES.
+
+(A) OVERVIEW
+-to be filled in-
+=== === === === ===
+
+(B) THE DEAL
+-to be filled in-
+=== === === === ===
+
+(C) PLAYING YOUR TURN
+-to be filled in-
+=== === === === ===
+
+(D) WINNING THE GAME
+-to be filled in- 
+=== === === === ===
+
+(E) SCORING
+-to be filled in-
+=== === === === ===
+
+
+(F) COMMAND LINE MOVE STRUCTURE
+
+(F1) COMMAND STRUCTURE
+
+STRUCTURE:
+[KEYWORD *] [TABLE ACTION ,] [HAND ACTION *]
+
+KEY:
+* - Required
+, - May have more than one argument
+
+(F2) KEYWORD DEFINITIONS
+
+-throwaway / throw => Discard a card of yours onto the table.
+
+-pickup => Pick up a card or set of cards from the table. This does incorporate builds, but
+only builds CREATED on THE SAME TURN. For existing builds (that have been named), we would use "capture".
+
+-build => Build up to a value, using some combination of the cards on the table, and one of your own 
+cards. This is ALWAYS a non-capturing move where you are preparing for later. Single builds, multiple builds,
+and locking builds are all incorporated in this keyword, so long as the capture is not in the same turn.
+Please note that you cannot combine or build on locked builds. It is recommended to use the game's generated nicknames 
+for existing builds.
+
+-capture => There is an existing build (that has already been named), and now you are on your capturing
+move. You will finish any desired additions to your build, and use the card from your hand to seal the
+coffin on this build. Please note that you cannot combine or build on locked builds. It is highly 
+recommended to use the game's generated nicknames for the builds here, to save your fingers unnecessary stress.
+
+(F3) EXAMPLES
+
+-throwaway 7
+English meaning: Throwaway [my] 7
+Contextual meaning: I can't or don't want to do anything, so I am trailing my 7.
+THIS IS A NON-CAPTURE MOVE. (note: "throw" also works)
+
+-pickup 8
+English meaning: Pickup [the] 8
+Contextual meaning: Pick up the only eight on the table with your only eight.
+
+-pickup k
+English meaning: Pickup [the] k
+Contextual meaning: Pick up the only king on the table with your only king.
+
+-pickup 8h 8s
+English meaning: Pickup [the] 8h [with my] 8s
+Contextual meaning: Pick up the table's 8 of hearts with your 8 of spades
+
+-pickup 52 7
+English meaning: Pickup [the] 5 [and] 2 [with my] 7
+Contextual meaning: I want to build 5 and 2 to make 7, and then pick it up immediately.
+There is also no ambiguity in what I'm referring to.
+
+-pickup 5h2s 7h
+English meaning: Pickup [the] 5h [and] 2s [with my] 7h
+Contextual meaning: I want to build the 5 of Hearts and the 2 of Spades, and then pick it up
+immediately. There might be ambiguity in my command, so I included the suit names.
+
+-pickup 23a4 5
+English meaning: Pickup [the] 2 [and] 3 [alongwiththe] a [and] 4 [with my] 5
+Contextual meaning: This is a multiple build
+
+-build 3 5
+English meaning: Build [using the table's] 3 [and my] 5
+Contextual meaning: I have an 8 in my hand, and cannot capture this turn since I used my only move to 
+add the 5 to the table, but I am hoping to use my 8 to pick it up later.
+
+-build 35 8
+English meaning: Build [using the table's] 3 [and] 5 [and then secure it with my] 8
+Contextual meaning: I am using the table's 3 and 5 to build it up to an 8, and then "locking" the
+build with my own 8. This implies I can capture it with another 8 on a different turn. THIS IS  A 
+"LOCKED" BUILD.
+
+-build 358 8
+English meaning: Build [using the table's] 3 [,] 5 [and] 8 [and then secure it with my] 8
+Contextual meaning: I am using the table's 3 and 5 to build it up to an 8, "locking" it with the table's 8,
+and then adding in my own 8. This implies I have another 8 that I can capture it with later. THIS IS A
+"LOCKED" BUILD.
+
+-build alpha 5
+English meaning: Build alpha [further by adding my own] 5
+Contextual meaning: There is some build that the game named alpha, whose value adds up to 5, and
+you would like to add to it with your own 5. This implies that you have another 5.
+
+-build alpha2 3
+English meaning: Build alpha [with the table's] 2 [and my own] 3
+Contextual meaning: Assume alpha is 5 (this would work with any value of alpha 5 or lower). 
+You added a 2 from the table, and a 3 from your hand to make it 10. This assumes you have a 10 
+in your hand, but you can't capture it yet. THIS ONLY WORKS IF THE BUILD IS NOT LOCKED.
+
+-capture alpha 10
+English meaning: Capture [the build] alpha [with my] 10
+Contextual meaning: Some build alpha exists where its value is 10, and you used your 10 to capture it.
+
+-capture alpha3 9
+English meaning: Capture [the build] alpha [after adding a] 3 [and using my] 9
+Contextual meaning: Let's assume the value of the build alpha was 6, but it was not locked. We could add
+a 3 from the table, and capture the build with our 9. Success!
+
+
+[********TODO: CHECK THIS WITH WIKIA RULES ON COMBINING BUILDS***********]
+-capture alphabeta 10
+English meaning: Capture alpha [and] beta [with my] 10
+Contextual meaning: This is ambiguous, yet has the same outcome.
+Case 1: Alpha and beta are NOT locked, and don't add up to the same value, but their value adds up to 10.
+Case 2: Alpha and beta are NOT locked, match in value, and their values are 10.
+In both of these cases, we may use our 10 to combine the existing builds on the table and steal them.
+
+-capture alphabeta3 9
+English meaning: Capture alpha [,] beta [, and] 3 [with my] 9
+Contextual meaning: 3 can be combined with either alpha or beta's builds to have its individual
+sums equal 9, and then we can capture it with 9.

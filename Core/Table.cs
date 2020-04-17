@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Casino.Core.Error;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using static Casino.Core.Defs;
@@ -72,12 +73,46 @@ namespace Casino.Core {
                 return true;
             }
 
-            private static bool GetMoveAction(Move moveCmd) {
+            private static bool GetMoveAction(Move attemptedMove) {
+                string moveCmd = attemptedMove.MoveCmd;
                 if (string.IsNullOrEmpty(moveCmd)) {
-                    throw new Exception(Errorstr.NoMove());
+                    throw new UnparseableMoveException("The attempted move command cannot be null or empty.", moveCmd);
+                }
+                string[] cmdArgs = moveCmd.Split(' ');
+                switch (cmdArgs[0]) {
+                    case "t":case "throw": case "throwaway":
+                        Throwaway(cmdArgs);
+                        break;
+                    case "p": case "pickup":
+                        Pickup(cmdArgs);
+                        break;
+                    case "b": case "build":
+                        Build(cmdArgs);
+                        break;
+                    case "c": case "capture":
+                        Capture(cmdArgs);
+                        break;
+                    default:
+                    throw new UnparseableMoveException("The attempted move uses an unidentified keyword", moveCmd);
                 }
                 throw new NotImplementedException();
 
+            }
+
+            private static void Capture(string[] cmdArgs) {
+                throw new NotImplementedException();
+            }
+
+            private static void Build(string[] cmdArgs) {
+                throw new NotImplementedException();
+            }
+
+            private static void Pickup(string[] cmdArgs) {
+                throw new NotImplementedException();
+            }
+
+            private static void Throwaway(string[] cmdArgs) {
+                throw new NotImplementedException();
             }
         }
 
