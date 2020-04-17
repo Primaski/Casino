@@ -19,7 +19,7 @@ namespace Casino.Core {
 
             try {
                 if (!IsValidGame(players)) {
-                    throw new Exception(ErrorMessage.InvalidGameSetup());
+                    throw new Exception(Errorstr.InvalidGameSetup());
                 }
             } catch {
                 throw;
@@ -41,8 +41,8 @@ namespace Casino.Core {
             Tuple<List<byte>, List<byte>> dealtCards = table.DealCards();
             p1.ReceiveCards(dealtCards.Item1);
             p2.ReceiveCards(dealtCards.Item2);
-
-            PrintGameStats(true); //debug
+            Console.WriteLine("FIVE OR NINE?! " + move.x);
+            //PrintGameStats(true); //debug
             throw new NotImplementedException();
         }
 

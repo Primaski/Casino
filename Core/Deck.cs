@@ -74,7 +74,7 @@ namespace Casino.Core {
             if (count < _cardDeck.Count) {
                 _cardDeck.RemoveRange(startIndex, count);
             } else {
-                throw new Exception(ErrorMessage.TooManyCards("Removing cards", CardCount, count));
+                throw new Exception(Errorstr.TooManyCards("Removing cards", CardCount, count));
             }
             return this;
         }
@@ -93,7 +93,7 @@ namespace Casino.Core {
         /// <param name="count">How many cards to remove from the top?</param>
         public List<byte> DrawCards(short count) {
             if(count > CardCount) {
-                throw new Exception(ErrorMessage.TooManyCards("Drawing cards",CardCount,count));
+                throw new Exception(Errorstr.TooManyCards("Drawing cards",CardCount,count));
             }
             List<byte> removedCards = _cardDeck.GetRange(0, count);
             RemoveCards(count);
@@ -111,7 +111,7 @@ namespace Casino.Core {
             if (cards.Count + CardCount >= DECK_SIZE) {
                 _cardDeck.InsertRange(atIndex, cards);
             } else {
-                throw new Exception(ErrorMessage.TooManyCards("Adding cards", DECK_SIZE, cards.Count));
+                throw new Exception(Errorstr.TooManyCards("Adding cards", DECK_SIZE, cards.Count));
             }
             canCreateNewDeck = false;
             return this;
@@ -144,6 +144,7 @@ namespace Casino.Core {
                     }
                 }
             }
+            
             _cardDeck = cardList;
             canCreateNewDeck = false;
             return this;

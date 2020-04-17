@@ -37,7 +37,7 @@ namespace Casino.Core {
         /// <param name="newCards">Cards received directly from Deck. Must be limited to max number of cards available in Hand at once.</param>
         public bool ReceiveCards(List<byte> newCards) {
             if(newCards.Count > (MAX_NUMBER_OF_CARDS - CountCardsInHand)) {
-                throw new Exception(ErrorMessage.TooManyCards(Name + "'s hand", 
+                throw new Exception(Errorstr.TooManyCards(Name + "'s hand", 
                     MAX_NUMBER_OF_CARDS, newCards.Count));
             }
             _hand.AddRange(newCards);

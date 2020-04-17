@@ -8,6 +8,7 @@ namespace Casino.Core {
         private Deck _deck = null;
         private byte _turnNo = 1;
         private bool initialDeal = true;
+        private Move currentMove = null;
 
         private List<byte> _CardsOnTable = new List<byte>();
         public Deck Deck { get { return _deck; } private set { _deck = value; } }
@@ -19,11 +20,11 @@ namespace Casino.Core {
 
         public Table(Deck deck) {
             if((deck.GetDeck().Count - INITIAL_CARDS_ON_TABLE) % CARDS_PER_PLAYER != 0) {
-                throw new Exception(ErrorMessage.UnevenDeck());
+                throw new Exception(Errorstr.UnevenDeck());
             }
             if(deck.GetDeck().Count != DECK_SIZE) {
                 throw new Exception(
-                    ErrorMessage.WrongCardCount("The table", DECK_SIZE, deck.GetDeck().Count));
+                    Errorstr.WrongCardCount("The table", DECK_SIZE, deck.GetDeck().Count));
             }
             Deck = deck;
         }
@@ -50,5 +51,35 @@ namespace Casino.Core {
             Tuple<List<byte>, List<byte>> returningCards = new Tuple<List<byte>, List<byte>>(p1Cards, p2Cards);
             return returningCards;            
         }
+
+
+        public Move IsValidMove(string moveCmd) {
+            currentMove = new Move(moveCmd);
+            Logic.IsValidMove(this);
+            return null;
+        }
+
+        private static class Logic {
+
+            /// <summary>
+            /// Diagnoses whether a move cmd is valid. No need to pass in string, since reference to Table is required.
+            /// </summary>
+            /// <param name="reference">Reference to the Table class that calls it.</param>
+            public static bool IsValidMove (Table origin) {
+                if(origin is null)
+                    throw new NullReferenceException(); //shouldn't even be theoretically possible
+                GetMoveAction(origin.currentMove);
+                return true;
+            }
+
+            private static bool GetMoveAction(Move moveCmd) {
+                if (string.IsNullOrEmpty(moveCmd)) {
+                    throw new Exception(Errorstr.NoMove());
+                }
+                throw new NotImplementedException();
+
+            }
+        }
+
     }
 }
