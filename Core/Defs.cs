@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Casino.Core.Error;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -34,16 +35,30 @@ namespace Casino.Core {
         
         [Flags]
         public enum CardSuits {
-            Clubs = 16, Diamonds = 32, Hearts = 64, Spades = 128
+            NONE = 0,  Clubs = 16, Diamonds = 32, Hearts = 64, Spades = 128
         };
-        private static string[] cardValAbbr =
+
+        public enum BuildNames {
+            Alpha, Beta, Gamma, Delta, Zeta, Eta, Theta, Iota, Kappa, Lambda
+        };
+
+        public enum Players {
+            NONE, ONE, TWO
+        };
+
+        public static readonly string[] cardValAbbr =
             { "X", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K" 
         };
-        private static char[] cardSuitAbbr =
-            { '♣', '♦', '♥', '♠'
+
+        public static readonly char[] charcardValAbbr =
+            { 'X', 'A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'
         };
-        private static char[] cardSuitAbbrAscii =
-            { 'c', 'd', 'h', 's'
+
+        public static readonly char[] cardSuitAbbr =
+            { 'X', '♣', '♦', '♥', '♠'
+        };
+        public static readonly char[] cardSuitAbbrAscii =
+            { 'X', 'c', 'd', 'h', 's'
         };
 
         public static string PrintCard(byte card) {
@@ -71,22 +86,65 @@ namespace Casino.Core {
         public static byte GetCardDigit(CardVals value, CardSuits suit) {
             return (byte)((byte)value + (byte)suit);
         }
+
         public static CardVals GetCardValue(byte card) {
-            return (CardVals)(card & 15);
+            byte val = (byte)(card & 15);
+            if(val == 0 || val > 13) {
+                throw new UnparseableCardException("Card value must not equal 0 or exceed 13 (King).",card);
+            }
+            return (CardVals)val;
         }
         public static CardSuits GetCardSuit(byte card) {
-            return (CardSuits)(card & 240);
+            byte suit = (byte)(card & 240);
+            //below bitwise operation throws exception if 0 or 2+ flags are set.
+            if(suit == 0 || (suit & (suit - 1)) != 0) {
+                throw new UnparseableCardException("A card must have exactly one suit.",card);
+            }
+            return (CardSuits)(suit);
         }
 
-        public static string GetCardValAbbr(byte val) {
-            return cardValAbbr[val & 15];
+        public static string GetCardValAbbr(byte val, bool charsOnly = false) {
+            return !charsOnly ? cardValAbbr[val & 15] : charcardValAbbr[val & 15].ToString();
         }
 
         public static char GetCardSuitAbbr(byte suit, bool ascii = false) {
-            int arrPos = (int)((Math.Log2(suit) / Math.Log2(2)) - 4);
+            if(suit == 0) return ((!ascii) ? cardSuitAbbr[0] : cardSuitAbbrAscii[0]);
+            int arrPos = (int)((Math.Log2(suit) / Math.Log2(2)) - 3);
             return !ascii ? cardSuitAbbr[arrPos] : cardSuitAbbrAscii[arrPos];
         }
 
+        public static bool IsACard(byte card) {
+            try {
+                string cardf = PrintCard(card);
+                return string.IsNullOrEmpty(cardf);
+            } catch (UnparseableCardException) {
+                return false;
+            } catch {
+                throw;
+            }
+        }
+
+        public static bool CardHasASuit(byte card) {
+            try {
+                GetCardSuit(card);
+                return true;
+            } catch (UnparseableCardException) {
+                return false;
+            } catch {
+                throw;
+            }
+        }
+
+        public static bool CardHasAValue(byte card) {
+            try {
+                GetCardValue(card);
+                return true;
+            } catch (UnparseableCardException) {
+                return false;
+            } catch {
+                throw;
+            }
+        }
 
     }
 }

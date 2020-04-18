@@ -28,9 +28,12 @@ namespace Casino.Core {
                 "the number of cards dealt to each player (" + CARDS_PER_PLAYER + ") must be 0, in order for there to be the correct number of " +
                 "cards reamining in the final deal.";
         }
-
         public static string NoMove() {
             return "A move assessment was attempted on a null or empty command.";
+        }
+
+        public static string CardFormat() {
+            return "Card names are expected to be in the format [value]([suit])";
         }
     }
 }

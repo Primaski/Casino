@@ -88,19 +88,19 @@ English meaning: Build [using the table's] 3 [and my] 5
 Contextual meaning: I have an 8 in my hand, and cannot capture this turn since I used my only move to 
 add the 5 to the table, but I am hoping to use my 8 to pick it up later.
 
--build 35 8
+-build 35 8h
 English meaning: Build [using the table's] 3 [and] 5 [and then secure it with my] 8
 Contextual meaning: I am using the table's 3 and 5 to build it up to an 8, and then "locking" the
 build with my own 8. This implies I can capture it with another 8 on a different turn. THIS IS  A 
 "LOCKED" BUILD.
 
--build 358 8
-English meaning: Build [using the table's] 3 [,] 5 [and] 8 [and then secure it with my] 8
+-build 358 8h
+English meaning: Build [using the table's] 3 [,] 5 [and] 8h [and then secure it with my] 8
 Contextual meaning: I am using the table's 3 and 5 to build it up to an 8, "locking" it with the table's 8,
 and then adding in my own 8. This implies I have another 8 that I can capture it with later. THIS IS A
 "LOCKED" BUILD.
 
--build alpha 5
+-build alpha 5 *****
 English meaning: Build alpha [further by adding my own] 5
 Contextual meaning: There is some build that the game named alpha, whose value adds up to 5, and
 you would like to add to it with your own 5. This implies that you have another 5.

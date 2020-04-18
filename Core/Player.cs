@@ -11,6 +11,8 @@ namespace Casino.Core {
         private byte _score = 0;
         private List<byte> _hand = null;
         private Deck _localDeck = null;
+        private Players _playerNo = Players.NONE;
+        public Players PlayerNo { get { return _playerNo; } private set { _playerNo = value; } }
         public string Name { get { return _name; } private set { _name = value; } }
         public byte Score { get { return _score; } private set { _score = value; } }
         public byte CountCardsInHand { 
@@ -23,8 +25,9 @@ namespace Casino.Core {
         public Deck LocalDeck { get { return _localDeck; } private set { _localDeck = value;  } }
 
 
-        public Player(string name, List<byte> hand = null, Deck localDeck = null) {
+        public Player(string name, Players playerNumber, List<byte> hand = null, Deck localDeck = null) {
             Name = name;
+            PlayerNo = playerNumber;
             hand ??= new List<byte>();
             localDeck ??= new Deck(true);
             this._hand = hand;

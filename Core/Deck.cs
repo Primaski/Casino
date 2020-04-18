@@ -139,7 +139,7 @@ namespace Casino.Core {
             List<byte> cardList = new List<byte>();
             foreach (CardSuits suit in Enum.GetValues(typeof(CardSuits))) {
                 foreach(CardVals val in Enum.GetValues(typeof(CardVals))) {
-                    if(val != 0) {
+                    if(val != 0 && suit != 0) {
                         cardList.Add(GetCardDigit(val, suit));
                     }
                 }

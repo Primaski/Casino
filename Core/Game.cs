@@ -6,17 +6,12 @@ using Casino.Core.Util;
 
 namespace Casino.Core {
     public static class Game {
-
-        private static Player p1 = null;
-        private static Player p2 = null;
         private static Table table = null;
         private static byte roundNumber = 1;
 
 
         public static void NewGame(Player[] players) {
             Deck deck = new Deck();
-            table = new Table(deck);
-
             try {
                 if (!IsValidGame(players)) {
                     throw new Exception(Errorstr.InvalidGameSetup());
@@ -24,10 +19,7 @@ namespace Casino.Core {
             } catch {
                 throw;
             }
-
-            p1 = players[0];
-            p2 = players[1];
-
+            table = new Table(deck, players[0], players[1]);
             PlayGame();
 
             return;
@@ -39,18 +31,22 @@ namespace Casino.Core {
         }
         private static void PlayGame() {
             Tuple<List<byte>, List<byte>> dealtCards = table.DealCards();
-            p1.ReceiveCards(dealtCards.Item1);
-            p2.ReceiveCards(dealtCards.Item2);
-            Console.WriteLine("FIVE OR NINE?! " + move.x);
-            //PrintGameStats(true); //debug
+            table.p1.ReceiveCards(dealtCards.Item1);
+            table.p2.ReceiveCards(dealtCards.Item2);
+            //PrintGameStats();
+            while (true) {
+                Console.WriteLine("test: ");
+                string test = Console.ReadLine();
+                table.IsValidMove("throw " + test);
+            }
             throw new NotImplementedException();
         }
 
         private static void PrintGameStats(bool detailed = false) {
             Console.WriteLine("Creating stats...");
             IEnumerable<Tuple<string, short, string, byte>> stats = new[] {
-                Tuple.Create(p1.Name,p1.CountCardsInDeck,PrintCardsShorthand(p1.Hand),p1.Score),
-                Tuple.Create(p2.Name,p2.CountCardsInDeck,PrintCardsShorthand(p2.Hand),p2.Score),
+                Tuple.Create(table.p1.Name,table.p1.CountCardsInDeck,PrintCardsShorthand(table.p1.Hand),table.p1.Score),
+                Tuple.Create(table.p2.Name,table.p2.CountCardsInDeck,PrintCardsShorthand(table.p2.Hand),table.p2.Score),
                 Tuple.Create("Table",table.CountCardsInDeck,PrintCardsShorthand(table.CardsOnTable),(byte)0),
             };
             Console.WriteLine(stats.ToStringTable(new[] { "Field", "Deck #", "In hand/On table", "Score" },
@@ -59,8 +55,8 @@ namespace Casino.Core {
             char ans = Console.ReadLine()?[0] ?? 'n';
             if(ans == 'y') {
                 Console.WriteLine("Deck info:");
-                Console.WriteLine("Player 1 deck:\n" + PrintCards(p1.LocalDeck.GetDeck()) + "\n");
-                Console.WriteLine("Player 2 deck:\n" + PrintCards(p2.LocalDeck.GetDeck()) + "\n");
+                Console.WriteLine("Player 1 deck:\n" + PrintCards(table.p1.LocalDeck.GetDeck()) + "\n");
+                Console.WriteLine("Player 2 deck:\n" + PrintCards(table.p2.LocalDeck.GetDeck()) + "\n");
                 Console.WriteLine("Table deck:\n" + PrintCards(table.Deck.GetDeck()) + "\n");
                 Console.WriteLine("Table deck (ordered):");
                 table.Deck.PrintOrderedDeck();
