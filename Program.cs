@@ -1,4 +1,5 @@
 ﻿using Casino.Core;
+using Casino.Core.Error;
 using System;
 using System.Collections.Generic;
 using System.IO;

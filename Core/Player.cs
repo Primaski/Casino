@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Casino.Core.Error;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -82,7 +83,58 @@ namespace Casino.Core {
         /// </summary>
         /// <param name="newCards">Cards received directly from Deck. Must be limited to max number of cards available in Hand at once.</param>
         public bool AddCardsToLocalDeck(List<byte> cards) {
-            throw new NotImplementedException();
+            LocalDeck.AddCards(0, cards);
+            return true;
+        }
+
+        /// <summary>
+        /// This card will be removed from player's Hand (playable cards), and not their local deck (earned cards). If card does not exist, this will return false.
+        /// </summary>
+        public bool RemoveCardFromLocalDeck(byte card) {
+            return RemoveCardsFromLocalDeck(new List<byte> { card });
+        }
+
+        /// <summary>
+        /// These cards will be removed from player's Hand (playable cards), and not their local deck (earned cards). If any card does not exist, this will return false and
+        /// no changes will be made.
+        /// </summary>
+        public bool RemoveCardsFromLocalDeck(List<byte> cardsToRemove) {
+            try {
+                LocalDeck.RemoveCards(cardsToRemove);
+            } catch (CardNotPresentException cnp) {
+                if (PlayerNo == Players.One) {
+                    cnp.Location = CardLocations.PlayerOneLocalDeck;
+                } else {
+                    cnp.Location = CardLocations.PlayerTwoLocalDeck;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Gets cards in hand by value.
+        /// </summary>
+        public List<byte> GetCardsByValue(CardVals value) {
+            List<byte> result = new List<byte>();
+            foreach(byte card in Hand) {
+                if(GetCardValue(card) == value) {
+                    result.Add(card);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Gets cards in hand by suit.
+        /// </summary>
+        public List<byte> GetCardsBySuit(CardSuits suit) {
+            List<byte> result = new List<byte>();
+            foreach (byte card in Hand) {
+                if (GetCardSuit(card) == suit) {
+                    result.Add(card);
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -96,7 +148,10 @@ namespace Casino.Core {
             return false;
         }
 
-        public bool HasCardInDeck(byte card) {
+        /// <summary>
+        /// Returns true if player has card in local deck.
+        /// </summary>
+        public bool HasCardInLocalDeck(byte card) {
             if (!IsACard(card)) return false;
             var deck = LocalDeck.GetDeck();
             foreach (byte cardf in deck) {

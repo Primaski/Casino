@@ -45,6 +45,7 @@ namespace Casino.Core {
 
         public void MakeMove(Move move) {
             if (move == null) throw new NullReferenceException();
+            currentMove = move;
             switch (move.MoveType) {
                 case MoveTypes.Throwaway:
                     GetActivePlayer().RemoveCard(move.CardPlayed);
@@ -139,7 +140,6 @@ namespace Casino.Core {
                     default:
                     throw new UnparseableMoveException("The attempted move uses an unidentified keyword", moveCmd);
                 }
-                return null;
             }
 
             private static Move Throwaway(string[] cmdArgs) {
@@ -162,18 +162,37 @@ namespace Casino.Core {
                         throw ex;
                     }
                 }
-                if (!PlayerHasCard(card)) {
-                    switch (table.GetActivePlayer().PlayerNo) {
-                        case Players.One:
-                            throw new CardNotPresentException("The player does not have the card they attempted to play.", card, CardLocations.PlayerOneHand);
-                        default:
-                            throw new CardNotPresentException("The player does not have the card they attempted to play.", card, CardLocations.PlayerTwoHand);
+                try {
+                    if (!CardHasASuit(card)) {
+                        card = GetCardByValue(card, table.GetActivePlayer().Hand);
+                    } else {
+                        if (!table.GetActivePlayer().HasCardInHand(card)) {
+                            throw new CardNotPresentException();
+                        }
                     }
+                }catch(CardNotPresentException cnp) {
+                    //necessary to throw new exception since location was unknown to GetCardByValue
+                    throw new CardNotPresentException("Card is not present in player's hand.", card, 
+                        (table.GetActivePlayer().PlayerNo == Players.One ) ? CardLocations.PlayerOneHand : CardLocations.PlayerTwoHand);
+                }catch(AmbiguousCardException ac) {
+                    //TODO: find out why this throws the caught exception instead of the new one
+                    throw new AmbiguousCardException("Card is not present in player's hand.", ac, card,
+                        (table.GetActivePlayer().PlayerNo == Players.One) ? CardLocations.PlayerOneHand : CardLocations.PlayerTwoHand);
+                } catch {
+                    throw;
                 }
+
                 return new Move(MoveTypes.Throwaway, card);
             }
 
             private static Move Pickup(string[] cmdArgs) {
+                if(cmdArgs.Length < 2 || cmdArgs.Length > 3) {
+                    throw new UnparseableMoveException("Two or three arguments expected. First argument pickup, " +
+                    "second argument card on table, third argument card in hand.", string.Join(' ', cmdArgs));
+                }
+                if(cmdArgs.Length == 2) {
+                    cmdArgs = new string[3] { cmdArgs[0], cmdArgs[1], cmdArgs[1] };
+                }
                 throw new NotImplementedException();
             }
 
@@ -284,6 +303,27 @@ namespace Casino.Core {
                     return false;
                 }
                 return true;
+            }
+
+            /// <summary>
+            /// Returns card in deck that matches an ambiguous card where suit is missing.
+            /// </summary>
+            /// <exception cref="CardNotPresentException">No cards that match this value.</exception>
+            /// <exception cref="AmbiguousCardException">Several cards match this value.</exception>
+            public static byte GetCardByValue(byte cardWithNoSuit, List<byte> deckToCheckAgainst) {
+                byte card = 0;
+                CardVals ambiCardVal = Defs.GetCardValue(cardWithNoSuit);
+                foreach(byte deckCard in deckToCheckAgainst) {
+                    if(Defs.GetCardValue(deckCard) == ambiCardVal) {
+                        if(card == 0) {
+                            card = deckCard;
+                        } else {
+                            throw new AmbiguousCardException("Card suit must be specified, as the card referral is ambiguous.", cardWithNoSuit);
+                        }
+                    }
+                }
+                if (card == 0) throw new CardNotPresentException("Card was specified by value, but no such value exists in this grouping of cards.", cardWithNoSuit);
+                return card;
             }
         }
     }

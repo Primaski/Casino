@@ -7,10 +7,12 @@ namespace Casino.Core.Error {
     [Serializable]
     public class UnparseableCardException : Exception {
 
-        public override string Message { get { return "The provided byte does not match any legal playing card."; } }
+        //public override string Message { get { return "The provided byte does not match any legal playing card."; } }
 
         public byte Card { get; set; } = 0;
         public UnparseableCardException() : base() {
+            //bad practice, but the override makes it impossible for me to pass in AmbiguousCardExceptions by message. Hoping to learn how to fix this.
+            throw new UnparseableCardException("The provided byte does not match any legal playing card.", 0);
         }
         public UnparseableCardException(string message, byte card)
             : base(DetailedMessage(message,card)) {

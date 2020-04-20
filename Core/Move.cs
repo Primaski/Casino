@@ -69,7 +69,7 @@ namespace Casino.Core {
                     throw new UnparseableCardException("Attempted to create Move class with invalid card picked up.", card);
                 }
             }
-
+            CardsPickedUp = cards;
             return this;
         }
 

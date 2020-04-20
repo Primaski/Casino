@@ -53,6 +53,7 @@ namespace Casino.Core {
             try {
                 move = table.GetMove(cmd);
             } catch (CardNotPresentException cnp) {
+                if (DEBUG_MODE) Console.WriteLine(cnp.ToString());
                 switch (cnp.Location) {
                     case CardLocations.PlayerOneHand:
                     case CardLocations.PlayerTwoHand:
@@ -70,18 +71,29 @@ namespace Casino.Core {
                     Console.WriteLine("Sorry, you specified a card that doesn't exist in your hand or on the table. Please try again.");
                     return null;
                 }
-            }catch(UnparseableCardException uc) {
-                if(uc.Card == 0 || !IsACard(uc.Card)) {
+            } catch (UnparseableCardException uc) {
+                if (DEBUG_MODE) Console.WriteLine(uc.ToString());
+                if (uc.Card == 0 || !IsACard(uc.Card)) {
                     Console.WriteLine("Sorry, one of the cards provided was not readable. Please try again.");
                     return null;
                 }
                 Console.WriteLine("Sorry, that is not a valid card (card: " + uc.Card.ToString() + "! Please try again.");
                 return null;
-            } catch (UnparseableMoveException) {
+            } catch (UnparseableMoveException um) {
+                if (DEBUG_MODE) Console.WriteLine(um.ToString());
                 Console.WriteLine("Sorry, your move was not of the right format! Please try again!");
                 return null;
+            } catch (AmbiguousCardException ac) {
+                if (DEBUG_MODE) Console.WriteLine(ac.ToString());
+                if (!CardHasAValue(ac.Card) || ac.Location == CardLocations.UNKNOWN) {
+                    Console.WriteLine("Sorry, one of the cards you specified could refer to multiple cards. Try again, this time, specify the suit!");
+                    return null;
+                }
+                Console.WriteLine("Sorry, the " + GetCardValue(ac.Card) + " card " + 
+                    ((ac.Location == CardLocations.Table) ? "on the table" : "in your hand" ) + " is ambiguous. Try again, this time, specify the suit!");
+                return null;
             } catch (Exception e) {
-                Console.WriteLine(e);
+                Console.WriteLine("Something unexpected went wrong. Here's what we know:\n\n" + e);
                 return null;
             }
 

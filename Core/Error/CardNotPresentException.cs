@@ -8,11 +8,15 @@ namespace Casino.Core.Error {
     [Serializable]
     public class CardNotPresentException : Exception {
 
-        public override string Message { get { return "The requested card does not exist in the location specified."; } }
+        //public override string Message { get { return "The requested card does not exist in the location specified."; } }
         public byte Card { get; set; } = 0;
         public CardLocations Location { get; set; } = CardLocations.UNKNOWN;
-        public CardNotPresentException() : base() { }
-        public CardNotPresentException(string message, byte card, CardLocations location)
+        public CardNotPresentException() : base() {
+            //bad practice, but the override makes it impossible for me to pass in AmbiguousCardExceptions by message. Hoping to learn how to fix this.
+            throw new CardNotPresentException("The requested card does not exist in the location specified.", 0);
+
+        }
+        public CardNotPresentException(string message, byte card, CardLocations location = CardLocations.UNKNOWN)
             : base(DetailedMessage(message,card,location)) {
             this.Card = card;
             this.Location = location;

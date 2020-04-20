@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using static Casino.Core.Defs;
 using Casino.Core.Util;
+using Casino.Core.Error;
 
 namespace Casino.Core {
     public class Deck {
@@ -93,6 +94,24 @@ namespace Casino.Core {
         /// <param name="count">How many cards should be removed from the top?</param>
         public Deck RemoveCards(short count) {
             return RemoveCards(0, count);
+        }
+
+        /// <summary>
+        /// Remove cards with these values.
+        /// </summary>
+        /// <param name="count">How many cards should be removed from the top?</param>
+        public Deck RemoveCards(List<byte> cards) {
+            List<int> removableCards = new List<int>();
+            foreach (byte card in CardDeck) {
+                int removeIndex = CardDeck.IndexOf(card);
+                if (removeIndex != -1) {
+                    removableCards.Add(removeIndex);
+                } else {
+                    throw new CardNotPresentException("Card was not found when attempting to remove it from local deck.", card, CardLocations.UNKNOWN);
+                }
+            }
+            _cardDeck.RemoveAll(x => removableCards.Contains(_cardDeck.IndexOf(x))); //TODO: what
+            return this;
         }
 
         /// <summary>
