@@ -7,9 +7,11 @@ namespace Casino.Core {
     public static class Defs {
 
         /* MODIFIABLE VALUES */
-        public static readonly byte NUMBER_OF_DECKS = 1;
+        public static bool DEBUG_MODE = false;
+        public static readonly byte NUMBER_OF_DECKS = 1; //ONLY ONE DECK IS SUPPORTED AS OF NOW, PLEASE DO NOT CHANGE THIS YET
         public static readonly byte CARDS_PER_PLAYER = 4;
         public static readonly byte INITIAL_CARDS_ON_TABLE = 4;
+
         public static readonly char RULES_SECTION_OF_CMD_FORMATTING = 'F';
 
         ///* PLEASE DO NOT MODIFY VALUES BELOW *///
@@ -38,13 +40,22 @@ namespace Casino.Core {
             NONE = 0,  Clubs = 16, Diamonds = 32, Hearts = 64, Spades = 128
         };
 
+        //Gamma is backup, one player can have a maximum of one build, meaning it should not be theoretically possible.
         public enum BuildNames {
-            Alpha, Beta, Gamma, Delta, Zeta, Eta, Theta, Iota, Kappa, Lambda
+            NONE, Alpha, Beta, Gamma
         };
 
         public enum Players {
-            NONE, ONE, TWO
+            NONE, One, Two
         };
+
+        public enum MoveTypes {
+            NO_MOVE, Throwaway, Pickup, Build, Capture
+        };
+
+        public enum CardLocations {
+            UNKNOWN, PlayerOneHand, PlayerTwoHand, PlayerOneLocalDeck, PlayerTwoLocalDeck, Deck, Table
+        }
 
         public static readonly string[] cardValAbbr =
             { "X", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K" 
@@ -116,7 +127,7 @@ namespace Casino.Core {
         public static bool IsACard(byte card) {
             try {
                 string cardf = PrintCard(card);
-                return string.IsNullOrEmpty(cardf);
+                return !string.IsNullOrEmpty(cardf);
             } catch (UnparseableCardException) {
                 return false;
             } catch {

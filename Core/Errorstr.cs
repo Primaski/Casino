@@ -35,5 +35,9 @@ namespace Casino.Core {
         public static string CardFormat() {
             return "Card names are expected to be in the format [value]([suit])";
         }
+
+        public static string EmptyBuild() {
+            return "Build cannot be empty.";
+        }
     }
 }

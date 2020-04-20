@@ -7,11 +7,17 @@ namespace Casino.Core.Error {
     [Serializable]
     public class UnparseableCardException : Exception {
 
-        public byte card { get; set; }
-        public UnparseableCardException() : base() { }
+        public override string Message { get { return "The provided byte does not match any legal playing card."; } }
+
+        public byte Card { get; set; } = 0;
+        public UnparseableCardException() : base() {
+        }
         public UnparseableCardException(string message, byte card)
-            : base(message) {
-            this.card = card;
+            : base(DetailedMessage(message,card)) {
+            this.Card = card;
+        }
+        private static string DetailedMessage(string message, byte card) {
+            return message + "\nCard ID: " + card.ToString();
         }
         public UnparseableCardException(string message, Exception innerException)
             : base(message, innerException) { }

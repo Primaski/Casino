@@ -7,23 +7,31 @@ using static Casino.Core.Defs;
 
 namespace Casino.Core {
     public class Table {
+
         private Deck _deck = null;
+        private List<Build> buildsOnTable = null;
+
         private byte _turnNo = 1;
         private bool initialDeal = true;
         private Move currentMove = null;
+        private string moveCmd = "";
         public Player p1 = null;
         public Player p2 = null;
         public Players TURN = Players.NONE;
 
         private List<byte> _CardsOnTable = new List<byte>();
         public Deck Deck { get { return _deck; } private set { _deck = value; } }
+        public List<Build> Builds { get { return buildsOnTable; } private set { buildsOnTable = value; } }
         public short CountCardsInDeck { get { return (short)_deck.CardCount; } }
         public List<byte> CardsOnTable { get { return _CardsOnTable; } private set { _CardsOnTable = value; } }
         public short CountCardsOnTable { get { return (short)_CardsOnTable.Count; } }
         public byte TurnNumber { get { return _turnNo; } private set { _turnNo = value; } }
 
 
-        public Table(Deck deck, Player p1, Player p2) {
+        public Table(Deck deck, Player playerOne, Player playerTwo) {
+            if (playerOne == null || p2 == playerTwo) throw new NullReferenceException();
+            p1 = playerOne;
+            p2 = playerTwo;
             if((deck.GetDeck().Count - INITIAL_CARDS_ON_TABLE) % CARDS_PER_PLAYER != 0) {
                 throw new Exception(Errorstr.UnevenDeck());
             }
@@ -31,8 +39,23 @@ namespace Casino.Core {
                 throw new Exception(
                     Errorstr.WrongCardCount("The table", DECK_SIZE, deck.GetDeck().Count));
             }
-            TURN = Players.ONE;
+            TURN = Players.One;
             Deck = deck;
+        }
+
+        public void MakeMove(Move move) {
+            if (move == null) throw new NullReferenceException();
+            switch (move.MoveType) {
+                case MoveTypes.Throwaway:
+                    GetActivePlayer().RemoveCard(move.CardPlayed);
+                    CardsOnTable.Add(move.CardPlayed);
+                    break;
+                case MoveTypes.Pickup: break;
+                case MoveTypes.Build: break;
+                case MoveTypes.Capture: break;
+                default: throw new Exception(Errorstr.NoMove());
+            }
+            FlipActivePlayer();
         }
 
         /// <summary>
@@ -59,22 +82,21 @@ namespace Casino.Core {
         }
 
 
-        public Move IsValidMove(string moveCmd) {
-            this.currentMove = new Move(moveCmd);
-            Logic.IsValidMove(this);
-            return null;
+        public Move GetMove(string moveCommand) {
+            this.moveCmd = moveCommand;
+            return Logic.GetMove(this);
         }
 
         public Player GetActivePlayer() {
             if (TURN == Players.NONE) return null;
-            return (TURN == Players.ONE) ? p1 : p2;
+            return (TURN == Players.One) ? p1 : p2;
         }
 
         public Players FlipActivePlayer() {
             switch (TURN) {
                 case Players.NONE: return Players.NONE;
-                case Players.ONE: TURN = Players.TWO; return Players.TWO;
-                default: TURN = Players.ONE; return Players.ONE;
+                case Players.One: TURN = Players.Two; return Players.Two;
+                default: TURN = Players.One; return Players.One;
             }
 
         }
@@ -92,59 +114,47 @@ namespace Casino.Core {
             /// Diagnoses whether a move cmd is valid. No need to pass in string, since reference to Table is required.
             /// </summary>
             /// <param name="reference">Reference to the Table class that calls it.</param>
-            public static bool IsValidMove (Table origin) {
+            public static Move GetMove (Table origin) {
                 if(origin is null)
                     throw new NullReferenceException(); //shouldn't even be theoretically possible
                 table = origin;
-                GetMoveAction(origin.currentMove);
-                return true;
+                return GetMoveAction(origin.moveCmd);
             }
 
-            private static bool GetMoveAction(Move attemptedMove) {
-                string moveCmd = attemptedMove.MoveCmd;
+            private static Move GetMoveAction(string attemptedMove) {
+                string moveCmd = attemptedMove;
                 if (string.IsNullOrEmpty(moveCmd)) {
                     throw new UnparseableMoveException("The attempted move command cannot be null or empty.", moveCmd);
                 }
                 string[] cmdArgs = moveCmd.Split(' ');
                 switch (cmdArgs[0]) {
                     case "t":case "throw": case "throwaway":
-                        Throwaway(cmdArgs);
-                        break;
+                        return Throwaway(cmdArgs);
                     case "p": case "pickup":
-                        Pickup(cmdArgs);
-                        break;
+                        return Pickup(cmdArgs);
                     case "b": case "build":
-                        Build(cmdArgs);
-                        break;
+                        return Build(cmdArgs);
                     case "c": case "capture":
-                        Capture(cmdArgs);
-                        break;
+                        return Capture(cmdArgs);
                     default:
                     throw new UnparseableMoveException("The attempted move uses an unidentified keyword", moveCmd);
                 }
-                return true;
-                //throw new NotImplementedException();
-
+                return null;
             }
 
-            private static void Throwaway(string[] cmdArgs) {
-                if (cmdArgs.Length != 2) {
-                    throw new UnparseableMoveException("Two arguments expected. First argument throwaway, second argument " +
-                        "the card that is being thrown away.", string.Join(' ', cmdArgs));
-                }
+            private static Move Throwaway(string[] cmdArgs) {
+                byte card = 0;
+                if (cmdArgs.Length != 2) throw new UnparseableMoveException("Two arguments expected. First argument throwaway, " +
+                    "second argument the card that is being thrown away.", string.Join(' ', cmdArgs));
                 string throwawayCard = cmdArgs[1];
                 if (ExtractBuildNamesFromString(ref throwawayCard)?.Count() != 0) {
                     throw new UnparseableMoveException("Build names cannot be used when throwing away cards.",
                         string.Join(' ', cmdArgs));
                 }
-                byte card = 0;
                 try {
                     var res = ExtractCardsFromString(throwawayCard);
-                    if(res.Count != 1) { //expects one argument
-                        throw new UnparseableMoveException();
-                    } else {
-                        card = res[0];
-                    }
+                    if(res.Count != 1) throw new UnparseableMoveException(); //expects one argument
+                    card = res[0];
                 } catch (Exception ex) {
                     if (ex is ArgumentOutOfRangeException || ex is ArgumentNullException || ex is UnparseableMoveException){
                         throw new UnparseableMoveException(Errorstr.NoMove(), string.Join(' ', cmdArgs));
@@ -152,20 +162,25 @@ namespace Casino.Core {
                         throw ex;
                     }
                 }
-
-                //ensure player has a card matching this
-                List<byte> playerHand = table.GetActivePlayer().Hand;
-                                
+                if (!PlayerHasCard(card)) {
+                    switch (table.GetActivePlayer().PlayerNo) {
+                        case Players.One:
+                            throw new CardNotPresentException("The player does not have the card they attempted to play.", card, CardLocations.PlayerOneHand);
+                        default:
+                            throw new CardNotPresentException("The player does not have the card they attempted to play.", card, CardLocations.PlayerTwoHand);
+                    }
+                }
+                return new Move(MoveTypes.Throwaway, card);
             }
 
-            private static void Pickup(string[] cmdArgs) {
+            private static Move Pickup(string[] cmdArgs) {
                 throw new NotImplementedException();
             }
 
-            private static void Build(string[] cmdArgs) {
+            private static Move Build(string[] cmdArgs) {
                 throw new NotImplementedException();
             }
-            private static void Capture(string[] cmdArgs) {
+            private static Move Capture(string[] cmdArgs) {
                 throw new NotImplementedException();
             }
 
@@ -174,7 +189,7 @@ namespace Casino.Core {
             /// ExtractBuildNamesFromString() if there is uncertainty.
             /// </summary>
             private static List<byte> ExtractCardsFromString(string cmd) {
-                cmd.Replace("10", "T");
+                cmd = cmd.Replace("10", "T");
                 string remain = cmd;
                 char currChar = '\0';
                 string currCard = "";
@@ -228,8 +243,6 @@ namespace Casino.Core {
                 }
 
                 byte result = GetCardDigit(value, suit);
-                /*Console.WriteLine("binary: " + Convert.ToString(result,2)); string test2 = "";
-                try { test2 = PrintCard(result); } catch { } Console.WriteLine("full rep: " + test2);*/
                 return result;
             }
 
@@ -263,7 +276,15 @@ namespace Casino.Core {
                 }
                 return res;
             }
+            private static bool PlayerHasCard(byte card) {
+                if (!IsACard(card)) {
+                    throw new UnparseableCardException("Player tried to play card that does not exist",card);
+                }
+                if (!table.GetActivePlayer().HasCardInHand(card)) {
+                    return false;
+                }
+                return true;
+            }
         }
-
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using static Casino.Core.Defs;
 using Casino.Core.Util;
+using Casino.Core.Error;
 
 namespace Casino.Core {
     public static class Game {
@@ -10,36 +11,81 @@ namespace Casino.Core {
         private static byte roundNumber = 1;
 
 
-        public static void NewGame(Player[] players) {
-            Deck deck = new Deck();
-            try {
-                if (!IsValidGame(players)) {
-                    throw new Exception(Errorstr.InvalidGameSetup());
-                }
-            } catch {
-                throw;
+        public static void NewGame(string[] playerNames) {
+            if (playerNames == null || playerNames.Length != 2) {
+                Console.WriteLine("Invalid number of players.");
+                return;
             }
-            table = new Table(deck, players[0], players[1]);
-            PlayGame();
-
-            return;
+            Deck deck = new Deck();
+            Player p1 = new Player(playerNames[0], Players.One);
+            Player p2 = new Player(playerNames[1], Players.Two);
+            table = new Table(deck, p1, p2);
+            while (table.Deck.CardCount != 0) {
+                NewRound();
+            }
+            Console.WriteLine("Summing up points...");
+            throw new NotImplementedException();
         }
 
         private static bool IsValidGame(Player[] players) {
             //add more in the future
             return (players.Length == 2);
         }
-        private static void PlayGame() {
+        private static void NewRound() {
             Tuple<List<byte>, List<byte>> dealtCards = table.DealCards();
             table.p1.ReceiveCards(dealtCards.Item1);
             table.p2.ReceiveCards(dealtCards.Item2);
-            //PrintGameStats();
-            while (true) {
-                Console.WriteLine("test: ");
-                string test = Console.ReadLine();
-                table.IsValidMove("throw " + test);
+            while (table.p1.CountCardsInHand != 0 || table.p2.CountCardsInHand != 0) {
+                if(DEBUG_MODE) PrintGameStats();
+                Console.WriteLine("It's your turn, " + table.GetActivePlayer().Name + "!");
+                Move move = null;
+                while (move == null) {
+                    string cmd = Console.ReadLine();
+                    move = GetPlayerMove(cmd);
+                }
+                if(DEBUG_MODE) Console.WriteLine("You will throw away your " + PrintCard(move.CardPlayed) + "!");
+                table.MakeMove(move);
             }
-            throw new NotImplementedException();
+        }
+
+        private static Move GetPlayerMove(string cmd) {
+            Move move = null;
+            try {
+                move = table.GetMove(cmd);
+            } catch (CardNotPresentException cnp) {
+                switch (cnp.Location) {
+                    case CardLocations.PlayerOneHand:
+                    case CardLocations.PlayerTwoHand:
+                    Console.WriteLine("Sorry, you don't have that card in your hand! Please try again.");
+                    return null;
+                    case CardLocations.Table:
+                    if (cnp.Card == 0 || !IsACard(cnp.Card)) {
+                        Console.WriteLine("Sorry, one of the cards you specified on the table does not exist. " +
+                            "Remember to call Builds by their Build Name! Please try again.");
+                        return null;
+                    }
+                    Console.WriteLine("Sorry, you don't have a " + PrintCard(cnp.Card) + "! Please try again.");
+                    return null;
+                    default:
+                    Console.WriteLine("Sorry, you specified a card that doesn't exist in your hand or on the table. Please try again.");
+                    return null;
+                }
+            }catch(UnparseableCardException uc) {
+                if(uc.Card == 0 || !IsACard(uc.Card)) {
+                    Console.WriteLine("Sorry, one of the cards provided was not readable. Please try again.");
+                    return null;
+                }
+                Console.WriteLine("Sorry, that is not a valid card (card: " + uc.Card.ToString() + "! Please try again.");
+                return null;
+            } catch (UnparseableMoveException) {
+                Console.WriteLine("Sorry, your move was not of the right format! Please try again!");
+                return null;
+            } catch (Exception e) {
+                Console.WriteLine(e);
+                return null;
+            }
+
+            return move;
         }
 
         private static void PrintGameStats(bool detailed = false) {

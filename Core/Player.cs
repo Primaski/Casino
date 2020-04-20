@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using static Casino.Core.Defs;
 
@@ -34,6 +35,10 @@ namespace Casino.Core {
             this._localDeck = localDeck;
         }
 
+        public string PrintHand() {
+            return PrintCards(Hand);
+        }
+
         /// <summary>
         /// These cards will enter the player's Hand (playable cards), and not their local deck (earned cards).
         /// </summary>
@@ -48,11 +53,56 @@ namespace Casino.Core {
         }
 
         /// <summary>
+        /// This card will be removed from player's Hand (playable cards), and not their local deck (earned cards). If card does not exist, this will return false.
+        /// </summary>
+        public bool RemoveCard(byte card) {
+            return RemoveCards(new List<byte> { card });
+        }
+
+        /// <summary>
+        /// These cards will be removed from player's Hand (playable cards), and not their local deck (earned cards). If any card does not exist, this will return false and
+        /// no changes will be made.
+        /// </summary>
+        public bool RemoveCards(List<byte> cardsToRemove) {
+            List<int> removableCards = new List<int>();
+            foreach(byte card in cardsToRemove) {
+                int removeIndex = Hand.IndexOf(card);
+                if (removeIndex != -1) {
+                    removableCards.Add(removeIndex);
+                } else {
+                    return false;
+                }
+            }
+            Hand.RemoveAll(x => removableCards.Contains(Hand.IndexOf(x))); //TODO: what
+            return true;
+        }
+
+        /// <summary>
         /// These cards will enter the player's Local Deck (earned cards), and not their Hand (playable cards).
         /// </summary>
         /// <param name="newCards">Cards received directly from Deck. Must be limited to max number of cards available in Hand at once.</param>
         public bool AddCardsToLocalDeck(List<byte> cards) {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Returns true if player has card in hand.
+        /// </summary>
+        public bool HasCardInHand(byte card) {
+            if (!IsACard(card)) return false;
+            foreach(byte cardf in Hand) {
+                if(cardf == card) return true;
+            }
+            return false;
+        }
+
+        public bool HasCardInDeck(byte card) {
+            if (!IsACard(card)) return false;
+            var deck = LocalDeck.GetDeck();
+            foreach (byte cardf in deck) {
+                if (cardf == card) return true;
+            }
+            return false;
         }
     }
 }
