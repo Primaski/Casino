@@ -66,10 +66,10 @@ namespace Casino.Core {
         };
 
         public static readonly char[] cardSuitAbbr =
-            { 'X', '♣', '♦', '♥', '♠'
+            { 'x', '♣', '♦', '♥', '♠'
         };
         public static readonly char[] cardSuitAbbrAscii =
-            { 'X', 'c', 'd', 'h', 's'
+            { 'x', 'c', 'd', 'h', 's'
         };
 
         public static string PrintCard(byte card) {
@@ -155,6 +155,27 @@ namespace Casino.Core {
             } catch {
                 throw;
             }
+        }
+
+        public static bool CardIsPictureCard(byte card) {
+            CardVals value = GetCardValue(card);
+            switch (value) {
+                case CardVals.Jack:
+                case CardVals.Queen:
+                case CardVals.King:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static bool ContainsPictureCard(List<byte> cards) {
+            foreach (byte card in cards) if (CardIsPictureCard(card)) return true;
+            return false;
+        }
+
+        public static bool CardsMatchInValue(byte card1, byte card2) {
+            return (GetCardValue(card1) == GetCardValue(card2));
         }
 
     }

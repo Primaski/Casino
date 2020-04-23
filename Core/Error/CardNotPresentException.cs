@@ -24,8 +24,11 @@ namespace Casino.Core.Error {
         private static string DetailedMessage(string message, byte card, CardLocations location) {
             return message + "\nCard ID: " + card.ToString() + "\nLocation: " + location.ToString();
         }
-        public CardNotPresentException(string message, Exception innerException)
-            : base(message, innerException) { }
+        public CardNotPresentException(string message, Exception innerException, byte card, CardLocations location = CardLocations.UNKNOWN)
+            : base(DetailedMessage(message, card, location), innerException) {
+            this.Card = card;
+            this.Location = location;
+        }
         public CardNotPresentException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
     }

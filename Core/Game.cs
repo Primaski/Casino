@@ -43,7 +43,6 @@ namespace Casino.Core {
                     string cmd = Console.ReadLine();
                     move = GetPlayerMove(cmd);
                 }
-                if(DEBUG_MODE) Console.WriteLine("You will throw away your " + PrintCard(move.CardPlayed) + "!");
                 table.MakeMove(move);
             }
         }
@@ -51,13 +50,16 @@ namespace Casino.Core {
         private static Move GetPlayerMove(string cmd) {
             Move move = null;
             try {
+                if(DEBUG_MODE && cmd == "stats") {
+                    PrintGameStats(); return null;
+                } 
                 move = table.GetMove(cmd);
             } catch (CardNotPresentException cnp) {
                 if (DEBUG_MODE) Console.WriteLine(cnp.ToString());
                 switch (cnp.Location) {
                     case CardLocations.PlayerOneHand:
                     case CardLocations.PlayerTwoHand:
-                    Console.WriteLine("Sorry, you don't have that card in your hand! Please try again.");
+                    Console.WriteLine("Sorry, you don't have a " + PrintCard(cnp.Card) + "! Please try again.");
                     return null;
                     case CardLocations.Table:
                     if (cnp.Card == 0 || !IsACard(cnp.Card)) {
@@ -65,7 +67,7 @@ namespace Casino.Core {
                             "Remember to call Builds by their Build Name! Please try again.");
                         return null;
                     }
-                    Console.WriteLine("Sorry, you don't have a " + PrintCard(cnp.Card) + "! Please try again.");
+                    Console.WriteLine("Sorry, there's no " + PrintCard(cnp.Card) + " on the table! Please try again.");
                     return null;
                     default:
                     Console.WriteLine("Sorry, you specified a card that doesn't exist in your hand or on the table. Please try again.");
@@ -89,9 +91,16 @@ namespace Casino.Core {
                     Console.WriteLine("Sorry, one of the cards you specified could refer to multiple cards. Try again, this time, specify the suit!");
                     return null;
                 }
-                Console.WriteLine("Sorry, the " + GetCardValue(ac.Card) + " card " + 
-                    ((ac.Location == CardLocations.Table) ? "on the table" : "in your hand" ) + " is ambiguous. Try again, this time, specify the suit!");
+                Console.WriteLine("Sorry, the " + GetCardValue(ac.Card) + " card " +
+                    ((ac.Location == CardLocations.Table) ? "on the table" : "in your hand") + " is ambiguous. Try again, this time, specify the suit!");
                 return null;
+            } catch (IllegalPickupException ip) {
+                if (DEBUG_MODE) Console.WriteLine(ip.ToString());
+                Console.WriteLine("TODO: MAKE USER FRIENDLY RESPONSE");
+            } catch (InvalidBuildException ib) {
+                //TODO: MAKE USER FRIENDLY RESPONSE
+                if (DEBUG_MODE) Console.WriteLine(ib.ToString());
+                Console.WriteLine("TODO: MAKE USER FRIENDLY RESPONSE");
             } catch (Exception e) {
                 Console.WriteLine("Something unexpected went wrong. Here's what we know:\n\n" + e);
                 return null;
@@ -100,7 +109,7 @@ namespace Casino.Core {
             return move;
         }
 
-        private static void PrintGameStats(bool detailed = false) {
+        private static void PrintGameStats() {
             Console.WriteLine("Creating stats...");
             IEnumerable<Tuple<string, short, string, byte>> stats = new[] {
                 Tuple.Create(table.p1.Name,table.p1.CountCardsInDeck,PrintCardsShorthand(table.p1.Hand),table.p1.Score),
@@ -110,7 +119,8 @@ namespace Casino.Core {
             Console.WriteLine(stats.ToStringTable(new[] { "Field", "Deck #", "In hand/On table", "Score" },
                 a => a.Item1, a => a.Item2, a => a.Item3, a => a.Item4));
             Console.WriteLine("Would you like more detailed stats? (y/n)");
-            char ans = Console.ReadLine()?[0] ?? 'n';
+            char ans = Console.ReadKey().KeyChar;
+            Console.WriteLine();
             if(ans == 'y') {
                 Console.WriteLine("Deck info:");
                 Console.WriteLine("Player 1 deck:\n" + PrintCards(table.p1.LocalDeck.GetDeck()) + "\n");

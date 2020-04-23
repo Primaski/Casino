@@ -74,7 +74,7 @@ namespace Casino.Core {
                     return false;
                 }
             }
-            Hand.RemoveAll(x => removableCards.Contains(Hand.IndexOf(x))); //TODO: what
+            Hand.RemoveAll(x => removableCards.Contains(Hand.IndexOf(x)));
             return true;
         }
 

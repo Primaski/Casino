@@ -21,8 +21,10 @@ namespace Casino.Core.Error {
         private static string DetailedMessage(string message, byte card) {
             return message + "\nCard ID: " + card.ToString();
         }
-        public UnparseableCardException(string message, Exception innerException)
-            : base(message, innerException) { }
+        public UnparseableCardException(string message, Exception innerException, byte card)
+            : base(DetailedMessage(message, card), innerException) {
+            this.Card = card;
+        }
         public UnparseableCardException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
     }

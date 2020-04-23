@@ -21,8 +21,10 @@ namespace Casino.Core.Error {
         private static string DetailedMessage(string message, string moveCmd) {
             return message + "\nMove command:" + moveCmd;
         }
-        public UnparseableMoveException(string message, Exception innerException)
-            : base(message, innerException) { }
+        public UnparseableMoveException(string message, Exception innerException, string move)
+            : base(DetailedMessage(message, move), innerException) {
+            this.Move = move;
+        }
         public UnparseableMoveException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
     }

@@ -133,9 +133,8 @@ namespace Casino.Core {
         /// </summary>
         /// <param name="atIndex">For atIndex = 0 being the top-most position, state the index to insert the first card.</param>
         /// <param name="cards">How many cards should be inserted?</param>
-        public Deck AddCards(short atIndex, List<byte> cards) {
-            short newCardNo = (short)_cardDeck.Count;
-            if (cards.Count + CardCount >= DECK_SIZE) {
+        public virtual Deck AddCards(short atIndex, List<byte> cards) {
+            if (cards.Count + CardCount <= DECK_SIZE) {
                 _cardDeck.InsertRange(atIndex, cards);
             } else {
                 throw new Exception(Errorstr.TooManyCards("Adding cards", DECK_SIZE, cards.Count));

@@ -10,12 +10,12 @@ namespace Casino {
         public static void Main(string[] args) {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.WriteLine("Play game in debug mode? (y/n)");
-            DEBUG_MODE = (Console.ReadLine() == "y") ? true : false; 
+            DEBUG_MODE = ("y"/*Console.ReadLine()*/ == "y") ? true : false; 
             
             Console.WriteLine("What is Player 1's name?");
-            string p1Name = Console.ReadLine();
+            string p1Name = "prim"; //TODO uncomment /*Console.ReadLine();*/
             Console.WriteLine("What is Player 2's name?");
-            string p2Name = Console.ReadLine();
+            string p2Name = "proom"; //TODO uncomment /*Console.ReadLine();*/
             p1Name = p1Name == "" ? "Player 1" : p1Name;
             p2Name = p2Name == "" ? "Player 2" : p2Name;
             p1Name = p1Name.Length >= 20 ? p1Name.Substring(0, 20) + "..." : p1Name;

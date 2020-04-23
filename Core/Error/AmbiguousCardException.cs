@@ -25,7 +25,10 @@ namespace Casino.Core.Error {
             return message + "\nCard ID: " + card.ToString() + "\nLocation: " + location.ToString();
         }
         public AmbiguousCardException(string message, Exception innerException, byte card, CardLocations location = CardLocations.UNKNOWN)
-            : base(DetailedMessage(message, card, location), innerException) { }
+            : base(DetailedMessage(message, card, location), innerException) {
+            this.Card = card;
+            this.Location = location;
+        }
         public AmbiguousCardException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
     }

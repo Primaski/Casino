@@ -51,7 +51,11 @@ namespace Casino.Core {
                     GetActivePlayer().RemoveCard(move.CardPlayed);
                     CardsOnTable.Add(move.CardPlayed);
                     break;
-                case MoveTypes.Pickup: break;
+                case MoveTypes.Pickup:
+                    GetActivePlayer().RemoveCard(move.CardPlayed);
+                    GetActivePlayer().AddCardsToLocalDeck(move.CardsPickedUp.Concat(new List<byte> { move.CardPlayed }).ToList());
+                    CardsOnTable.RemoveAll(x => move.CardsPickedUp.Contains(x));
+                break;
                 case MoveTypes.Build: break;
                 case MoveTypes.Capture: break;
                 default: throw new Exception(Errorstr.NoMove());
@@ -106,11 +110,20 @@ namespace Casino.Core {
         }
 
 
-
         /**********************************************************************************************/
+        /**********************************************************************************************/
+        /**********************************************************************************************/
+
         private static class Logic {
 
             private static Table table = null;
+
+
+
+            /*********************************************************************/
+            /**************************** CORE METHODS ***************************/
+            /*********************************************************************/
+
             /// <summary>
             /// Diagnoses whether a move cmd is valid. No need to pass in string, since reference to Table is required.
             /// </summary>
@@ -147,14 +160,11 @@ namespace Casino.Core {
                 if (cmdArgs.Length != 2) throw new UnparseableMoveException("Two arguments expected. First argument throwaway, " +
                     "second argument the card that is being thrown away.", string.Join(' ', cmdArgs));
                 string throwawayCard = cmdArgs[1];
-                if (ExtractBuildNamesFromString(ref throwawayCard)?.Count() != 0) {
+                if (ExtractBuildNamesFromString(ref throwawayCard)?.Count() != 0)
                     throw new UnparseableMoveException("Build names cannot be used when throwing away cards.",
                         string.Join(' ', cmdArgs));
-                }
                 try {
-                    var res = ExtractCardsFromString(throwawayCard);
-                    if(res.Count != 1) throw new UnparseableMoveException(); //expects one argument
-                    card = res[0];
+                    card = ExtractCardsFromString(throwawayCard)[0];
                 } catch (Exception ex) {
                     if (ex is ArgumentOutOfRangeException || ex is ArgumentNullException || ex is UnparseableMoveException){
                         throw new UnparseableMoveException(Errorstr.NoMove(), string.Join(' ', cmdArgs));
@@ -162,38 +172,54 @@ namespace Casino.Core {
                         throw ex;
                     }
                 }
-                try {
-                    if (!CardHasASuit(card)) {
-                        card = GetCardByValue(card, table.GetActivePlayer().Hand);
-                    } else {
-                        if (!table.GetActivePlayer().HasCardInHand(card)) {
-                            throw new CardNotPresentException();
-                        }
-                    }
-                }catch(CardNotPresentException cnp) {
-                    //necessary to throw new exception since location was unknown to GetCardByValue
-                    throw new CardNotPresentException("Card is not present in player's hand.", card, 
-                        (table.GetActivePlayer().PlayerNo == Players.One ) ? CardLocations.PlayerOneHand : CardLocations.PlayerTwoHand);
-                }catch(AmbiguousCardException ac) {
-                    //TODO: find out why this throws the caught exception instead of the new one
-                    throw new AmbiguousCardException("Card is not present in player's hand.", ac, card,
-                        (table.GetActivePlayer().PlayerNo == Players.One) ? CardLocations.PlayerOneHand : CardLocations.PlayerTwoHand);
-                } catch {
-                    throw;
-                }
+                
+                card = GetCorrespondingCards(new List<byte> { card }, table.GetActivePlayer().Hand,
+                    (table.GetActivePlayer().PlayerNo == Players.One) ? CardLocations.PlayerOneHand : CardLocations.PlayerTwoHand)[0];
 
                 return new Move(MoveTypes.Throwaway, card);
             }
 
             private static Move Pickup(string[] cmdArgs) {
-                if(cmdArgs.Length < 2 || cmdArgs.Length > 3) {
+                if(cmdArgs.Length < 2 || cmdArgs.Length > 3)
                     throw new UnparseableMoveException("Two or three arguments expected. First argument pickup, " +
                     "second argument card on table, third argument card in hand.", string.Join(' ', cmdArgs));
-                }
-                if(cmdArgs.Length == 2) {
+                if (cmdArgs.Length == 2)
+                    //"pickup 4" should be interpreted as "use the sole 4 in hand to pick up the sole 4 on table"
                     cmdArgs = new string[3] { cmdArgs[0], cmdArgs[1], cmdArgs[1] };
+                string fromTable = cmdArgs[1];
+                string fromHand = cmdArgs[2];
+                if (ExtractBuildNamesFromString(ref fromTable)?.Count() != 0 || ExtractBuildNamesFromString(ref fromHand)?.Count() != 0)
+                    throw new UnparseableMoveException("Build names cannot be used when picking up cards. Use capture instead.",
+                        string.Join(' ', cmdArgs));
+                List<byte> playOnTableRaw, playOnTable;
+                byte playFromHandRaw, playFromHand;
+                playOnTableRaw = playOnTable = new List<byte>();
+                playFromHandRaw = playFromHand = 0;
+
+                try {
+                    playOnTableRaw = ExtractCardsFromString(fromTable);
+                    playFromHandRaw = ExtractCardFromString(fromHand);
+                } catch (Exception ex) {
+                    if (ex is ArgumentOutOfRangeException || ex is ArgumentNullException) {
+                        throw new UnparseableMoveException(Errorstr.NoMove(), string.Join(' ', cmdArgs));
+                    } else {
+                        throw ex;
+                    }
                 }
-                throw new NotImplementedException();
+
+                playOnTable = GetCorrespondingCards(playOnTableRaw, table.CardsOnTable, CardLocations.Table);
+                playFromHand = GetCorrespondingCards(new List<byte> { playFromHandRaw }, table.GetActivePlayer().Hand,
+                    (table.GetActivePlayer().PlayerNo == Players.One) ? CardLocations.PlayerOneHand : CardLocations.PlayerTwoHand)[0];
+
+                if (ContainsPictureCard(playOnTable.ToList())) {
+                    if (playOnTable.Count != 1 || !CardsMatchInValue(playFromHand,playOnTable[0])) throw new IllegalPickupException(
+                        "Cannot pickup multiple picture cards at once", playFromHand, (byte)GetCardValue(playFromHand));
+                } else {
+                    //if no error, then valid move
+                    Build build = new Build(BuildNames.NONE, playOnTable, (byte)GetCardValue(playFromHand));
+                }
+
+                return new Move(MoveTypes.Pickup).PlayCard(playFromHand).PickupCards(playOnTable);
             }
 
             private static Move Build(string[] cmdArgs) {
@@ -203,6 +229,11 @@ namespace Casino.Core {
                 throw new NotImplementedException();
             }
 
+
+            /*********************************************************************/
+            /************************** UTILITY METHODS **************************/
+            /*********************************************************************/
+
             /// <summary>
             /// Assumes all BuildNames are extracted beforehand (example: alpha, beta). Run 
             /// ExtractBuildNamesFromString() if there is uncertainty.
@@ -210,24 +241,17 @@ namespace Casino.Core {
             private static List<byte> ExtractCardsFromString(string cmd) {
                 cmd = cmd.Replace("10", "T");
                 string remain = cmd;
-                char currChar = '\0';
-                string currCard = "";
                 List<byte> result = new List<byte>();
-                while (remain.Length != 0) {
-                    currChar = remain[0];
-                    currCard += currChar;
-                    if (charcardValAbbr.Contains(char.ToUpper(currChar))) {
+                while (remain.Length > 0) {
+                    if (!charcardValAbbr.Contains(char.ToUpper(remain[0]))){
+                        throw new UnparseableMoveException(Errorstr.CardFormat(), cmd);
+                    }
+                    if (remain.Length > 1 && cardSuitAbbrAscii.Contains(remain[1])) { //example 5h
+                        result.Add(ExtractCardFromString(remain.Substring(0, 2)));
+                        remain = remain.Substring(2);
+                    } else { //examples 9, 92 (only parses 9 in both scenarios)
+                        result.Add(ExtractCardFromString(remain.Substring(0, 1)));
                         remain = remain.Substring(1);
-                        if (remain.Length != 0) {
-                            currChar = remain[0];
-                            if (cardSuitAbbrAscii.Contains(char.ToLower(currChar))) {
-                                remain = remain.Substring(1);
-                                currCard += currChar;
-                            }
-                        }
-                        result.Add(ExtractCardFromString(currCard));
-                    } else {
-                        throw new UnparseableMoveException(Errorstr.NoMove(), cmd);
                     }
                 }
                 return result;
@@ -259,6 +283,7 @@ namespace Casino.Core {
                             suit = suitf; break;
                         }
                     }
+                    if(suit == CardSuits.NONE) { throw new UnparseableMoveException("Invalid suit provided to a card", cmd); }
                 }
 
                 byte result = GetCardDigit(value, suit);
@@ -306,11 +331,45 @@ namespace Casino.Core {
             }
 
             /// <summary>
+            /// Handy little method that matches ambiguous cards with their full local representation, as well as determines if 
+            /// such an association exists. If encountering a problem, will throw errors, expect to handle them by providing location.
+            /// </summary>
+            private static List<byte> GetCorrespondingCards(List<byte> expectedCards, List<byte> evaluatingDeck, CardLocations location = CardLocations.UNKNOWN) {
+                //TODO: check for duplicates - so that, for example "44" doesn't result in an error for a deck with only 4h and 4s
+                List<byte> modifiableDeck = new List<byte>(evaluatingDeck); //temp deck
+                List<byte> updatedCards = new List<byte>(); //includes filled out suits
+                foreach (byte card in expectedCards) {
+                    try {
+                        byte modifiedCard = 0;
+                        if (!CardHasASuit(card)) {
+                            modifiedCard = GetCardByValue(card, modifiableDeck);
+                            updatedCards.Add(modifiedCard); //solves ambiguity
+                        } else {
+                            if (modifiableDeck.Contains(card)) {
+                                modifiedCard = card;
+                                updatedCards.Add(card);
+                            } else {
+                                throw new CardNotPresentException();
+                            }
+                        }
+                        modifiableDeck.Remove(modifiedCard);
+                    } catch (CardNotPresentException cnp) {
+                        throw new CardNotPresentException("Card is not present in " + location.ToString(), cnp, card, location);
+                    } catch (AmbiguousCardException ac) {
+                        throw new AmbiguousCardException("Card is ambiguous and can refer to several cards in " + location.ToString(), ac, card, location);
+                    } catch {
+                        throw;
+                    }
+                }
+                return updatedCards;
+            }
+
+            /// <summary>
             /// Returns card in deck that matches an ambiguous card where suit is missing.
             /// </summary>
             /// <exception cref="CardNotPresentException">No cards that match this value.</exception>
             /// <exception cref="AmbiguousCardException">Several cards match this value.</exception>
-            public static byte GetCardByValue(byte cardWithNoSuit, List<byte> deckToCheckAgainst) {
+            private static byte GetCardByValue(byte cardWithNoSuit, List<byte> deckToCheckAgainst) {
                 byte card = 0;
                 CardVals ambiCardVal = Defs.GetCardValue(cardWithNoSuit);
                 foreach(byte deckCard in deckToCheckAgainst) {
