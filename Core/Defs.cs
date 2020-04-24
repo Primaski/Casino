@@ -11,6 +11,7 @@ namespace Casino.Core {
         public static readonly byte NUMBER_OF_DECKS = 1; //ONLY ONE DECK IS SUPPORTED AS OF NOW, PLEASE DO NOT CHANGE THIS YET
         public static readonly byte CARDS_PER_PLAYER = 4;
         public static readonly byte INITIAL_CARDS_ON_TABLE = 4;
+        public static readonly byte SCORE_TO_WIN = 21;
 
         public static readonly char RULES_SECTION_OF_CMD_FORMATTING = 'F';
 
@@ -30,7 +31,11 @@ namespace Casino.Core {
         /// We can use bitwise operations to extract the suit and value of the card (using below methods), and it only takes 1 byte!
         /// ***********************************************************///
 
+
         public static readonly short DECK_SIZE = (short)(52 * NUMBER_OF_DECKS);
+
+
+        /********************** ARRAYS / DICTIONARIES / ENUMS  **********************/
         public enum CardVals {
             NONE, Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King
         };
@@ -55,7 +60,35 @@ namespace Casino.Core {
 
         public enum CardLocations {
             UNKNOWN, PlayerOneHand, PlayerTwoHand, PlayerOneLocalDeck, PlayerTwoLocalDeck, Deck, Table
-        }
+        };
+
+        public enum ScoreableAttributes {
+            //dynamic
+            NONE, MostCards, MostSpades,
+            //static
+            TenOfHearts, TwoOfSpades, AceOfClubs, AceOfDiamonds, AceOfHearts, AceOfSpades
+        };
+
+        public static Dictionary<ScoreableAttributes, byte> PointsByAttribute = new Dictionary<ScoreableAttributes, byte> {
+            {ScoreableAttributes.NONE, 0 }, 
+            {ScoreableAttributes.MostCards, 3},
+            {ScoreableAttributes.MostSpades, 1},
+            {ScoreableAttributes.TenOfHearts, 2},
+            {ScoreableAttributes.TwoOfSpades, 1},
+            {ScoreableAttributes.AceOfClubs, 1},
+            {ScoreableAttributes.AceOfDiamonds, 1},
+            {ScoreableAttributes.AceOfHearts, 1},
+            {ScoreableAttributes.AceOfSpades, 1}
+        };
+
+        public static Dictionary<ScoreableAttributes, byte> CardNumberByStaticAttribute = new Dictionary<ScoreableAttributes, byte> {
+            {ScoreableAttributes.TenOfHearts,GetCardDigit(CardVals.Ten,CardSuits.Hearts)},
+            {ScoreableAttributes.TwoOfSpades,GetCardDigit(CardVals.Two,CardSuits.Spades)},
+            {ScoreableAttributes.AceOfClubs,GetCardDigit(CardVals.Ace,CardSuits.Clubs)},
+            {ScoreableAttributes.AceOfDiamonds,GetCardDigit(CardVals.Ace,CardSuits.Diamonds)},
+            {ScoreableAttributes.AceOfHearts,GetCardDigit(CardVals.Ace,CardSuits.Hearts)},
+            {ScoreableAttributes.AceOfSpades,GetCardDigit(CardVals.Ace,CardSuits.Spades)}
+        };
 
         public static readonly string[] cardValAbbr =
             { "X", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K" 
@@ -72,6 +105,9 @@ namespace Casino.Core {
             { 'x', 'c', 'd', 'h', 's'
         };
 
+
+
+        /********************** METHODS **********************/
         public static string PrintCard(byte card) {
             return GetCardValue(card) + " of " + GetCardSuit(card);
         }

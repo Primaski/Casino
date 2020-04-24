@@ -20,11 +20,18 @@ namespace Casino.Core {
             Player p1 = new Player(playerNames[0], Players.One);
             Player p2 = new Player(playerNames[1], Players.Two);
             table = new Table(deck, p1, p2);
-            while (table.Deck.CardCount != 0) {
+            /*while (table.Deck.CardCount != 0) {
                 NewRound();
-            }
+            }*/
+
+            //debug
+            table.DealRandomHands();
+            PrintGameStats();
             Console.WriteLine("Summing up points...");
-            throw new NotImplementedException();
+            table.AssignPoints(roundNumber);
+            Console.WriteLine(table.p1.PrintScoreLogEntry(roundNumber));
+            Console.WriteLine(table.p2.PrintScoreLogEntry(roundNumber));
+
         }
 
         private static bool IsValidGame(Player[] players) {
@@ -32,10 +39,8 @@ namespace Casino.Core {
             return (players.Length == 2);
         }
         private static void NewRound() {
-            Tuple<List<byte>, List<byte>> dealtCards = table.DealCards();
-            table.p1.ReceiveCards(dealtCards.Item1);
-            table.p2.ReceiveCards(dealtCards.Item2);
-            while (table.p1.CountCardsInHand != 0 || table.p2.CountCardsInHand != 0) {
+            table.DealCards();
+            while (table.p1.CountCardsInHand != 0 || table.p2.CountCardsInHand != 0) { //TODO: move eval statement to table
                 if(DEBUG_MODE) PrintGameStats();
                 Console.WriteLine("It's your turn, " + table.GetActivePlayer().Name + "!");
                 Move move = null;

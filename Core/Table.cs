@@ -43,6 +43,10 @@ namespace Casino.Core {
             Deck = deck;
         }
 
+        public void GiveCardsToPlayers() {
+
+        }
+
         public void MakeMove(Move move) {
             if (move == null) throw new NullReferenceException();
             currentMove = move;
@@ -67,7 +71,7 @@ namespace Casino.Core {
         /// Will put new cards on table, and return player cards. (!Meant solely for use in Game.cs)
         /// </summary>
         /// <returns>T1 of tuple will be array of cards to be dealt to Player 1, and T2 to player 2.</returns>
-        public Tuple<List<byte>,List<byte>> DealCards() {
+        public void DealCards() {
             if (initialDeal) {
                 List<byte> cardsReceived = Deck.DrawCards(INITIAL_CARDS_ON_TABLE);
                 _CardsOnTable.AddRange(cardsReceived);
@@ -82,8 +86,8 @@ namespace Casino.Core {
                     p2Cards.Add(Deck.DrawCards(1)[0]);
                 }
             }
-            Tuple<List<byte>, List<byte>> returningCards = new Tuple<List<byte>, List<byte>>(p1Cards, p2Cards);
-            return returningCards;            
+            p1.ReceiveCards(p1Cards);
+            p2.ReceiveCards(p2Cards);         
         }
 
 
@@ -109,6 +113,78 @@ namespace Casino.Core {
             TURN = number;
         }
 
+        /// <summary>
+        /// Use this method at round end. Will assign point values and summary to players themselves.
+        /// </summary>
+        public void AssignPoints(byte currentRound) {
+            List<ScoreableAttributes> p1Captures, p2Captures;
+            p1Captures = new List<ScoreableAttributes>();
+            p2Captures = new List<ScoreableAttributes>();
+            SetActivePlayer(Players.One);
+
+            /*STATIC VALUES*/
+            List<ScoreableAttributes> staticScoreables = CardNumberByStaticAttribute.Select(x => x.Key).ToList();
+            /*DYNAMIC VALUES*/
+            int p1CardCount, p2CardCount, p1SpadeCount, p2SpadeCount;
+            p1SpadeCount = p2SpadeCount = 0;
+            p1CardCount = p1.LocalDeck.CardCount;
+            p2CardCount = p2.LocalDeck.CardCount;
+
+            /*EVALUATE CARDS*/
+            do {
+                Player player = GetActivePlayer();
+                List<ScoreableAttributes> captures = new List<ScoreableAttributes>();
+                CardVals value = CardVals.NONE;
+                CardSuits suit = CardSuits.NONE;
+
+                while(player.LocalDeck.CardCount > 0) {
+                    byte card = player.LocalDeck.DrawCards(1)[0];
+                    value = GetCardValue(card);
+                    suit = GetCardSuit(card);
+
+                    /*STATIC*/
+                    staticScoreables.Where(attr => CardNumberByStaticAttribute[attr].Equals(card)).ToList()
+                        .ForEach(attr => { captures.Add(attr); });
+                    staticScoreables.RemoveAll(attr => captures.Contains(attr)); //efficiency reasons
+                    /*DYNAMIC*/
+                    if (TURN == Players.One) { p1SpadeCount += (suit == CardSuits.Spades) ? 1 : 0; }
+                    if (TURN == Players.Two) { p2SpadeCount += (suit == CardSuits.Spades) ? 1 : 0; }
+                }
+                if (TURN == Players.One) { p1Captures.AddRange(captures); } else { p2Captures.AddRange(captures); }
+                FlipActivePlayer();
+            } while (TURN != Players.One);
+
+            /* EVAL DYNAMICS */
+            if(p1CardCount > p2CardCount) {
+                p1Captures.Add(ScoreableAttributes.MostCards);
+            }else if(p2CardCount > p1CardCount) {
+                p2Captures.Add(ScoreableAttributes.MostCards);
+            }
+
+            if(p1SpadeCount > p2CardCount) {
+                p1Captures.Add(ScoreableAttributes.MostSpades);
+            }else if(p2SpadeCount > p1SpadeCount) {
+                p2Captures.Add(ScoreableAttributes.MostSpades);
+            }
+
+            /* Conclusion - scores are evaluated by player */
+            p1.AddNewScoreLogEntry(p1Captures);
+            p2.AddNewScoreLogEntry(p2Captures);
+        }
+        
+
+
+
+        //MEANT FOR DEBUGGING
+        public void DealRandomHands(bool fixedAmounts = false) {
+            _deck.ShuffleDeck();
+            bool extra = (CountCardsInDeck % 2 == 1) && (fixedAmounts);
+            short p1Deck = (fixedAmounts) ? (short)(CountCardsInDeck / 2) : (short)(Util.Misc.randomNumber.Next(0, CountCardsInDeck));
+            short p2Deck = (fixedAmounts) ? (short)(CountCardsInDeck / 2) : (short)(CountCardsInDeck - p1Deck);
+            p1.AddCardsToLocalDeck(_deck.DrawCards(p1Deck));
+            p2.AddCardsToLocalDeck(_deck.DrawCards(p2Deck));
+            if (extra) p1.AddCardsToLocalDeck(_deck.DrawCards(1));
+        }
 
         /**********************************************************************************************/
         /**********************************************************************************************/
@@ -117,8 +193,6 @@ namespace Casino.Core {
         private static class Logic {
 
             private static Table table = null;
-
-
 
             /*********************************************************************/
             /**************************** CORE METHODS ***************************/

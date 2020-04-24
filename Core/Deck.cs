@@ -80,7 +80,7 @@ namespace Casino.Core {
         /// <param name="count">From startIndex, how many cards should be removed?</param>
         public Deck RemoveCards(short startIndex, short count) {
             if (count == 0) return this;
-            if (count < _cardDeck.Count) {
+            if (count <= _cardDeck.Count) {
                 _cardDeck.RemoveRange(startIndex, count);
             } else {
                 throw new Exception(Errorstr.TooManyCards("Removing cards", CardCount, count));
@@ -115,12 +115,12 @@ namespace Casino.Core {
         }
 
         /// <summary>
-        /// Removes cards directly from the top of the deck, and returns them to you.
+        /// Removes cards directly from the top of the deck, and returns them to you. Returns null if too many requested.
         /// </summary>
         /// <param name="count">How many cards to remove from the top?</param>
-        public virtual List<byte> DrawCards(short count) {
+        public virtual List<byte> DrawCards(short count = 1) {
             if(count > CardCount) {
-                throw new Exception(Errorstr.TooManyCards("Drawing cards",CardCount,count));
+                return null;
             }
             List<byte> removedCards = _cardDeck.GetRange(0, count);
             RemoveCards(count);
@@ -176,7 +176,7 @@ namespace Casino.Core {
             return this;
         }
 
-        private Deck ShuffleDeck() {
+        public Deck ShuffleDeck() {
             /* Variation on Fisher-Yates algorithm */
             List<byte> deck = _cardDeck;
             if(deck?.Count == 0) { return this; }
