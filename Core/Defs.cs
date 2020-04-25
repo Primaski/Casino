@@ -12,6 +12,7 @@ namespace Casino.Core {
         public static readonly byte CARDS_PER_PLAYER = 4;
         public static readonly byte INITIAL_CARDS_ON_TABLE = 4;
         public static readonly byte SCORE_TO_WIN = 21;
+        public static readonly byte MAX_POINTS_PER_ROUND = 11; //only change this if ScoreableAttributes or PointsByAttribute are modified
 
         public static readonly char RULES_SECTION_OF_CMD_FORMATTING = 'F';
 

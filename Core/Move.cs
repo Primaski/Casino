@@ -27,9 +27,9 @@ namespace Casino.Core {
         //impossible to combine more than 2 builds, as each player can only have one build on the board at a time
         Tuple<Build, Build> _combinedExistingBuilds = null; 
 
-        public byte CardPlayed { get { return _cardPlayed; } private set { _cardPlayed = value; } }
-        public List<byte> CardsPickedUp { get { return _cardsPickedUp; } private set { _cardsPickedUp = value; } }
-        public Build BuildPickedUp { get { return _buildPickedUp; } private set { _buildPickedUp = value; } }
+        public byte CardPlayed { get { return _cardPlayed; } }
+        public List<byte> CardsPickedUp { get { return _cardsPickedUp; } }
+        public Build BuildPickedUp { get { return _buildPickedUp; } }
         public List<byte> NewBuildCards { 
             get { return _newBuildCards; } 
             private set { if(value != null && value.Any()) { _newBuildCards = value; } } }
@@ -38,17 +38,17 @@ namespace Casino.Core {
             get { return _cardsAddedToExistingBuild; } 
             private set { if (value.Item2 != null && value.Item2.Any()) { _cardsAddedToExistingBuild = value; } } }
 
-        public Tuple<Build,Build> CombinedExistingBuilds { get { return _combinedExistingBuilds; } private set { _combinedExistingBuilds = value; } }
-        public MoveTypes MoveType { get { return _moveType; } private set { _moveType = value; } }
+        public Tuple<Build,Build> CombinedExistingBuilds { get { return _combinedExistingBuilds; } }
+        public MoveTypes MoveType { get { return _moveType; } }
         private string _moveCmd = "";
 
         public Move(MoveTypes moveType) {
-            MoveType = moveType;
+            _moveType = moveType;
         }
         public Move(MoveTypes moveType, byte cardPlayed) {
-            MoveType = moveType;
+            _moveType = moveType;
             if (IsACard(cardPlayed)) {
-                CardPlayed = cardPlayed;
+                _cardPlayed = cardPlayed;
             } else {
                 throw new UnparseableCardException("Attempted to create Move class with invalid card played.", cardPlayed);
             }
@@ -56,7 +56,7 @@ namespace Casino.Core {
 
         public Move PlayCard(byte cardPlayed) {
             if (IsACard(cardPlayed)) {
-                CardPlayed = cardPlayed;
+                _cardPlayed = cardPlayed;
             } else {
                 throw new UnparseableCardException("Attempted to create Move class with invalid card played.", cardPlayed);
             }
@@ -69,13 +69,13 @@ namespace Casino.Core {
                     throw new UnparseableCardException("Attempted to create Move class with invalid card picked up.", card);
                 }
             }
-            CardsPickedUp = cards;
+            _cardsPickedUp = cards;
             return this;
         }
 
 
         public Move PickupBuild(Build build) {
-            BuildPickedUp = build;
+            _buildPickedUp = build;
             return this;
         }
 
@@ -98,7 +98,7 @@ namespace Casino.Core {
         }
 
         public Move CombineExistingBuilds(Build build1, Build build2) {
-            CombinedExistingBuilds = new Tuple<Build, Build>(build1, build2);
+            _combinedExistingBuilds = new Tuple<Build, Build>(build1, build2);
             return this;
         }
 

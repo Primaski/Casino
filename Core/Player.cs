@@ -17,24 +17,24 @@ namespace Casino.Core {
         private Deck _localDeck = null;
         private Players _playerNo = Players.NONE;
         private List<List<ScoreableAttributes>> _scoreLog = new List<List<ScoreableAttributes>>();
-        public Players PlayerNo { get { return _playerNo; } private set { _playerNo = value; } }
-        public string Name { get { return _name; } private set { _name = value; } }
-        public byte Score { get { return _score; } private set { _score = value; } }
-        public byte CurrRoundScore { get { return _currRoundScore; } private set { _currRoundScore = value; } }
+        public Players PlayerNo { get { return _playerNo; } }
+        public string Name { get { return _name; } }
+        public byte Score { get { return _score; } }
+        public byte CurrRoundScore { get { return _currRoundScore; } }
         public byte CountCardsInHand {
             get { return (byte)Hand.Count; }
         }
         public short CountCardsInDeck {
             get { return (short)_localDeck.CardCount; }
         }
-        public List<byte> Hand { get { return _hand; } private set { _hand = value; } }
-        public Deck LocalDeck { get { return _localDeck; } private set { _localDeck = value; } }
+        public List<byte> Hand { get { return _hand; } }
+        public Deck LocalDeck { get { return _localDeck; } }
         private List<List<ScoreableAttributes>> ScoreLog { get { return _scoreLog; } }
 
 
         public Player(string name, Players playerNumber, List<byte> hand = null, Deck localDeck = null) {
-            Name = name;
-            PlayerNo = playerNumber;
+            _name = name;
+            _playerNo = playerNumber;
             hand ??= new List<byte>();
             localDeck ??= new Deck(true);
             this._hand = hand;
@@ -43,6 +43,11 @@ namespace Casino.Core {
 
         public string PrintHand() {
             return PrintCards(Hand);
+        }
+
+        public bool HasEmptyHand() {
+            if (CountCardsInHand == 0) return true;
+            return false;
         }
 
         /// <summary>
@@ -88,7 +93,7 @@ namespace Casino.Core {
         /// </summary>
         /// <param name="newCards">Cards received directly from Deck. Must be limited to max number of cards available in Hand at once.</param>
         public bool AddCardsToLocalDeck(List<byte> cards) {
-            LocalDeck.AddCards(0, cards);
+            LocalDeck.AddCardsToTop(cards);
             return true;
         }
 

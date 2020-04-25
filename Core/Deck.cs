@@ -13,8 +13,8 @@ namespace Casino.Core {
         private List<byte> _cardDeck = null;
         private bool canCreateNewDeck = true; //ensure that once a card has been added to the deck, this is set to false to ensure no new CreateDeck() calls.
         public short CardCount { get { return (short)_cardDeck.Count; } }
-        public List<byte> CardDeck { get { return _cardDeck; } private set { _cardDeck = value; } }
-        public BuildNames BuildName { get { return _buildName; } private set { _buildName = value; } }
+        public List<byte> CardDeck { get { return _cardDeck; } }
+        public BuildNames BuildName { get { return _buildName; } }
         public Deck(bool empty = false, bool shuffle = true, byte noOfDecks = 1) {
             if (noOfDecks != 1) throw new NotImplementedException("Please limit decks to 1 for now.");
             if (!empty) {
@@ -26,8 +26,8 @@ namespace Casino.Core {
         }
 
         protected void BuildInit(BuildNames buildName, List<byte> cardDeck) {
-            BuildName = buildName;
-            CardDeck = cardDeck;
+            _buildName = buildName;
+            _cardDeck = cardDeck;
         }
 
         /// <summary>

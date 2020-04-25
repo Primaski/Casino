@@ -9,10 +9,14 @@ namespace Casino.Core {
     public class Table {
 
         private Deck _deck = null;
-        private List<Build> buildsOnTable = null;
+        private List<Build> _buildsOnTable = null;
 
         private byte _turnNo = 1;
-        private bool initialDeal = true;
+        private byte _moveNo = 1;
+
+        private bool _initialDeal = true;
+        private bool _roundHasBeenScored = false;
+
         private Move currentMove = null;
         private string moveCmd = "";
         public Player p1 = null;
@@ -20,12 +24,14 @@ namespace Casino.Core {
         public Players TURN = Players.NONE;
 
         private List<byte> _CardsOnTable = new List<byte>();
-        public Deck Deck { get { return _deck; } private set { _deck = value; } }
-        public List<Build> Builds { get { return buildsOnTable; } private set { buildsOnTable = value; } }
+        public Deck Deck { get { return _deck; } }
+        public List<Build> Builds { get { return _buildsOnTable; }}
         public short CountCardsInDeck { get { return (short)_deck.CardCount; } }
-        public List<byte> CardsOnTable { get { return _CardsOnTable; } private set { _CardsOnTable = value; } }
+        public List<byte> CardsOnTable { get { return _CardsOnTable; } }
         public short CountCardsOnTable { get { return (short)_CardsOnTable.Count; } }
-        public byte TurnNumber { get { return _turnNo; } private set { _turnNo = value; } }
+        public byte TurnNumber { get { return _turnNo; } }
+        public byte MoveNumber { get { return _moveNo; } }
+        public bool RoundHasBeenScored { get { return _roundHasBeenScored; } }
 
 
         public Table(Deck deck, Player playerOne, Player playerTwo) {
@@ -40,25 +46,66 @@ namespace Casino.Core {
                     Errorstr.WrongCardCount("The table", DECK_SIZE, deck.GetDeck().Count));
             }
             TURN = Players.One;
-            Deck = deck;
+            _deck = deck;
         }
 
-        public void GiveCardsToPlayers() {
-
+        /// <summary>
+        /// Will put new cards on table, and return player cards. (!Meant solely for use in Game.cs)
+        /// </summary>
+        /// <returns>T1 of tuple will be array of cards to be dealt to Player 1, and T2 to player 2.</returns>
+        public void DealCards() {
+            if (_initialDeal) {
+                List<byte> cardsReceived = Deck.DrawCards(INITIAL_CARDS_ON_TABLE);
+                _CardsOnTable.AddRange(cardsReceived);
+                _initialDeal = false;
+            }
+            List<byte> p1Cards = new List<byte>();
+            List<byte> p2Cards = new List<byte>();
+            for (int i = 0; i < CARDS_PER_PLAYER * 2; i++) {
+                if (i % 2 == 0) {
+                    p1Cards.Add(Deck.DrawCards(1)[0]);
+                } else {
+                    p2Cards.Add(Deck.DrawCards(1)[0]);
+                }
+            }
+            p1.ReceiveCards(p1Cards);
+            p2.ReceiveCards(p2Cards);
         }
 
+        /// <summary>
+        /// Returns true if it is safe to run DealCards(). Assumes a round is still ongoing.
+        /// </summary>
+        public bool NewDealIsPossible() {
+            return (_initialDeal ?
+                (CountCardsInDeck - ((CARDS_PER_PLAYER * 2) + INITIAL_CARDS_ON_TABLE) >= 0) : (CountCardsInDeck - (CARDS_PER_PLAYER * 2) >= 0)) 
+                && p1.CountCardsInHand == 0 
+                && p2.CountCardsInHand == 0;
+        }
+
+        /// <summary>
+        /// Interprets user command and returns a Move. PLEASE NOTE: This does NOT perform the move. MakeMove(move) will do this.
+        /// </summary>
+        public Move GetMove(string moveCommand) {
+            this.moveCmd = moveCommand;
+            return Logic.GetMove(this);
+        }
+
+        /// <summary>
+        /// Makes move on the table, and flips the active player. A Move can be created using GetMove(command).
+        /// </summary>
         public void MakeMove(Move move) {
+            _moveNo++;
             if (move == null) throw new NullReferenceException();
             currentMove = move;
             switch (move.MoveType) {
                 case MoveTypes.Throwaway:
-                    GetActivePlayer().RemoveCard(move.CardPlayed);
-                    CardsOnTable.Add(move.CardPlayed);
-                    break;
+                GetActivePlayer().RemoveCard(move.CardPlayed);
+                CardsOnTable.Add(move.CardPlayed);
+                break;
                 case MoveTypes.Pickup:
-                    GetActivePlayer().RemoveCard(move.CardPlayed);
-                    GetActivePlayer().AddCardsToLocalDeck(move.CardsPickedUp.Concat(new List<byte> { move.CardPlayed }).ToList());
-                    CardsOnTable.RemoveAll(x => move.CardsPickedUp.Contains(x));
+                GetActivePlayer().RemoveCard(move.CardPlayed);
+                GetActivePlayer().AddCardsToLocalDeck(move.CardsPickedUp.Concat(new List<byte> { move.CardPlayed }).ToList());
+                CardsOnTable.RemoveAll(x => move.CardsPickedUp.Contains(x));
                 break;
                 case MoveTypes.Build: break;
                 case MoveTypes.Capture: break;
@@ -68,55 +115,10 @@ namespace Casino.Core {
         }
 
         /// <summary>
-        /// Will put new cards on table, and return player cards. (!Meant solely for use in Game.cs)
-        /// </summary>
-        /// <returns>T1 of tuple will be array of cards to be dealt to Player 1, and T2 to player 2.</returns>
-        public void DealCards() {
-            if (initialDeal) {
-                List<byte> cardsReceived = Deck.DrawCards(INITIAL_CARDS_ON_TABLE);
-                _CardsOnTable.AddRange(cardsReceived);
-                initialDeal = false;
-            }
-            List<byte> p1Cards = new List<byte>();
-            List<byte> p2Cards = new List<byte>();
-            for(int i = 0; i < CARDS_PER_PLAYER * 2; i++) {
-                if (i % 2 == 0) {
-                    p1Cards.Add(Deck.DrawCards(1)[0]);
-                } else {
-                    p2Cards.Add(Deck.DrawCards(1)[0]);
-                }
-            }
-            p1.ReceiveCards(p1Cards);
-            p2.ReceiveCards(p2Cards);         
-        }
-
-
-        public Move GetMove(string moveCommand) {
-            this.moveCmd = moveCommand;
-            return Logic.GetMove(this);
-        }
-
-        public Player GetActivePlayer() {
-            if (TURN == Players.NONE) return null;
-            return (TURN == Players.One) ? p1 : p2;
-        }
-
-        public Players FlipActivePlayer() {
-            switch (TURN) {
-                case Players.NONE: return Players.NONE;
-                case Players.One: TURN = Players.Two; return Players.Two;
-                default: TURN = Players.One; return Players.One;
-            }
-
-        }
-        public void SetActivePlayer(Players number) {
-            TURN = number;
-        }
-
-        /// <summary>
         /// Use this method at round end. Will assign point values and summary to players themselves.
         /// </summary>
-        public void AssignPoints(byte currentRound) {
+        public void ScoreRound(byte currentRound) {
+            if (_roundHasBeenScored) throw new Exception(Errorstr.DuplicateRoundScore());
             List<ScoreableAttributes> p1Captures, p2Captures;
             p1Captures = new List<ScoreableAttributes>();
             p2Captures = new List<ScoreableAttributes>();
@@ -161,7 +163,7 @@ namespace Casino.Core {
                 p2Captures.Add(ScoreableAttributes.MostCards);
             }
 
-            if(p1SpadeCount > p2CardCount) {
+            if(p1SpadeCount > p2SpadeCount) {
                 p1Captures.Add(ScoreableAttributes.MostSpades);
             }else if(p2SpadeCount > p1SpadeCount) {
                 p2Captures.Add(ScoreableAttributes.MostSpades);
@@ -170,17 +172,76 @@ namespace Casino.Core {
             /* Conclusion - scores are evaluated by player */
             p1.AddNewScoreLogEntry(p1Captures);
             p2.AddNewScoreLogEntry(p2Captures);
+            _roundHasBeenScored = true;
         }
-        
 
-
-
-        //MEANT FOR DEBUGGING
-        public void DealRandomHands(bool fixedAmounts = false) {
+        /// <summary>
+        /// Takes cards back from players, shuffles the deck, and clears round-specific stats on the table. Stops short of dealing cards.
+        /// </summary>
+        public void NewRound() {
+            _deck.AddCardsToTop(p1.LocalDeck.DrawCards(p1.LocalDeck.CardCount));
+            _deck.AddCardsToTop(p2.LocalDeck.DrawCards(p2.LocalDeck.CardCount));
             _deck.ShuffleDeck();
-            bool extra = (CountCardsInDeck % 2 == 1) && (fixedAmounts);
-            short p1Deck = (fixedAmounts) ? (short)(CountCardsInDeck / 2) : (short)(Util.Misc.randomNumber.Next(0, CountCardsInDeck));
-            short p2Deck = (fixedAmounts) ? (short)(CountCardsInDeck / 2) : (short)(CountCardsInDeck - p1Deck);
+
+            _turnNo = 1;
+            _moveNo = 1;
+            _initialDeal = true;
+            _roundHasBeenScored = false;
+            currentMove = null;
+            moveCmd = "";
+            TURN = Players.NONE;
+        }
+        public Players PlayerHasWon() {
+            byte p1Score = p1.Score;
+            byte p2Score = p2.Score;
+            if(p1Score > p2Score) {
+                if (p1Score >= SCORE_TO_WIN) return Players.One;
+            }else if(p2Score > p1Score) {
+                if (p2Score >= SCORE_TO_WIN) return Players.Two;
+            }
+            return Players.NONE;
+        }
+
+        public string PrintRoundStats(byte roundNumber) {
+            if (!_roundHasBeenScored) return "Round has not been scored yet.";
+            StringBuilder str = new StringBuilder();
+            str.AppendLine("Round " + roundNumber + " is finished! Here are the stats:");
+            str.AppendLine("Player 1:" + p1.PrintScoreLogEntry(roundNumber));
+            str.AppendLine("Player 2:" + p2.PrintScoreLogEntry(roundNumber));
+            Player leading = (p1.Score > p2.Score) ? p1 : (p2.Score > p1.Score) ? p2 : null;
+            if(leading != null) {
+                str.AppendLine("Player " + leading.PlayerNo + " is leading with " + leading.Score + " points!");
+                if (SCORE_TO_WIN - leading.Score <= MAX_POINTS_PER_ROUND) 
+                    str.AppendLine("They only need " + (SCORE_TO_WIN - leading.Score) + " more points to win!");
+            } else {
+                str.AppendLine("It's a tie game! Both players have " + p1.Score + " points.");
+                if (SCORE_TO_WIN - p1.Score <= MAX_POINTS_PER_ROUND)
+                    str.AppendLine("Both players only need " + (SCORE_TO_WIN - leading.Score) + " more points to win!");
+            }
+            return str.ToString();
+        }
+
+        public Player GetActivePlayer() {
+            if (TURN == Players.NONE) return null;
+            return (TURN == Players.One) ? p1 : p2;
+        }
+
+        private Players FlipActivePlayer() {
+            switch (TURN) {
+                case Players.NONE: return Players.NONE;
+                case Players.One: TURN = Players.Two; return Players.Two;
+                default: TURN = Players.One; return Players.One;
+            }
+        }
+        private void SetActivePlayer(Players number) {
+            TURN = number;
+        }
+
+        public void DealRandomHands(bool equalAmounts = false) {
+            _deck.ShuffleDeck();
+            bool extra = CountCardsInDeck % 2 == 1;
+            short p1Deck = (equalAmounts) ? (short)(CountCardsInDeck / 2) : (short)(Util.Misc.randomNumber.Next(0, CountCardsInDeck));
+            short p2Deck = (equalAmounts) ? (short)(CountCardsInDeck / 2) : (short)(CountCardsInDeck - p1Deck);
             p1.AddCardsToLocalDeck(_deck.DrawCards(p1Deck));
             p2.AddCardsToLocalDeck(_deck.DrawCards(p2Deck));
             if (extra) p1.AddCardsToLocalDeck(_deck.DrawCards(1));

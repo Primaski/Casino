@@ -39,5 +39,9 @@ namespace Casino.Core {
         public static string EmptyBuild() {
             return "Build cannot be empty.";
         }
+
+        internal static string DuplicateRoundScore() {
+            return "The round has already been scored, and cannot be scored again.";
+        }
     }
 }

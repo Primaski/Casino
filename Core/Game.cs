@@ -4,6 +4,7 @@ using System.Text;
 using static Casino.Core.Defs;
 using Casino.Core.Util;
 using Casino.Core.Error;
+using System.Linq;
 
 namespace Casino.Core {
     public static class Game {
@@ -20,37 +21,45 @@ namespace Casino.Core {
             Player p1 = new Player(playerNames[0], Players.One);
             Player p2 = new Player(playerNames[1], Players.Two);
             table = new Table(deck, p1, p2);
-            /*while (table.Deck.CardCount != 0) {
-                NewRound();
-            }*/
+            do {
+                Console.WriteLine("Press any key to start the round.");
+                Console.ReadKey();
+                while (table.NewDealIsPossible()) {
+                    NewDeal();
+                }
+                table.ScoreRound(roundNumber);
+                Console.WriteLine(table.PrintRoundStats(roundNumber));
+                table.NewRound();
+            } while (!GameIsOver());
+            Console.WriteLine("The game is now over.");
 
-            //debug
-            table.DealRandomHands();
-            PrintGameStats();
-            Console.WriteLine("Summing up points...");
-            table.AssignPoints(roundNumber);
-            Console.WriteLine(table.p1.PrintScoreLogEntry(roundNumber));
-            Console.WriteLine(table.p2.PrintScoreLogEntry(roundNumber));
+        }
 
+        private static void NewDeal() {
+            table.DealCards();
+            while(!(table.p1.HasEmptyHand() && table.p2.HasEmptyHand())) {
+                AskPlayerForInput();
+            }
+        }
+
+        private static void AskPlayerForInput() {
+            if (DEBUG_MODE) PrintGameStats();
+            Console.WriteLine("It's your turn, " + table.GetActivePlayer().Name + "!");
+            Move move = null;
+            string cmd = Console.ReadLine();
+            move = GetPlayerMove(cmd);
+            if (move != null) table.MakeMove(move);
+        }
+
+        private static bool GameIsOver() {
+            return !table.NewDealIsPossible() && table.RoundHasBeenScored && (table.PlayerHasWon() != Players.NONE);
         }
 
         private static bool IsValidGame(Player[] players) {
             //add more in the future
             return (players.Length == 2);
         }
-        private static void NewRound() {
-            table.DealCards();
-            while (table.p1.CountCardsInHand != 0 || table.p2.CountCardsInHand != 0) { //TODO: move eval statement to table
-                if(DEBUG_MODE) PrintGameStats();
-                Console.WriteLine("It's your turn, " + table.GetActivePlayer().Name + "!");
-                Move move = null;
-                while (move == null) {
-                    string cmd = Console.ReadLine();
-                    move = GetPlayerMove(cmd);
-                }
-                table.MakeMove(move);
-            }
-        }
+
 
         private static Move GetPlayerMove(string cmd) {
             Move move = null;
@@ -101,11 +110,20 @@ namespace Casino.Core {
                 return null;
             } catch (IllegalPickupException ip) {
                 if (DEBUG_MODE) Console.WriteLine(ip.ToString());
-                Console.WriteLine("TODO: MAKE USER FRIENDLY RESPONSE");
+                if (!CardHasAValue(ip.PickupCard) || ip.BuildValue == 0) {
+                    Console.WriteLine("There is no way to pick up that build value with the card you played! Please try again.");
+                    return null;
+                }
+                Console.WriteLine("There is no way to pick up a build with a value of " + ip.BuildValue + " with your " + GetCardValue(ip.PickupCard)
+                    + ". Please try again!");
+                return null;
             } catch (InvalidBuildException ib) {
-                //TODO: MAKE USER FRIENDLY RESPONSE
                 if (DEBUG_MODE) Console.WriteLine(ib.ToString());
-                Console.WriteLine("TODO: MAKE USER FRIENDLY RESPONSE");
+                if(!(ib.Build?.Any()) ?? false || ib.BuildValue == 0) {
+                    Console.WriteLine("It is impossible to obtain that build! Please try again.");
+                    return null;
+                }
+                Console.WriteLine("It is impossible to build up to " + ib.BuildValue + " using " + PrintCards(ib.Build) + ". Please try again!");
             } catch (Exception e) {
                 Console.WriteLine("Something unexpected went wrong. Here's what we know:\n\n" + e);
                 return null;
